@@ -1,6 +1,7 @@
 {
     "require": {
-        "eddturtle/direct-upload": ">=1.4.1"
+        "eddturtle/direct-upload": ">=1.4.1",
+        "ramsey/uuid": "^3.5"
     },
     "config": {
         "preferred-install": "dist"
