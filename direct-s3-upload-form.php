@@ -1,4 +1,4 @@
-<?PHP
+<?php
 /* Template Name: Direct S3 Form */
 require_once(__DIR__ . '/vendor/autoload.php');
 get_header();
@@ -100,6 +100,11 @@ get_currentuserinfo();
 	</div>
 	</div>
 </div>
+<style>
+.dragover {
+background: rgba(84, 235, 128, 0.3);
+}
+</style>
 <script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
 <script type="text/javascript">
 /**
@@ -163,11 +168,37 @@ document.addEventListener("DOMContentLoaded", function(event) {
   console.log('...it\'s alive!!!')
   // not a real jquery :)
   $ = function (x) {return document.querySelectorAll(x)}
-  var jsmediatags = window.jsmediatags;
+  var jsmediatags = window.jsmediatags
+  var dragDropTarget = $('.gform_fileupload_multifile')[0]
+
+  function dropZoneDragover(ev) {
+    dragDropTarget.classList.add('dragover');
+    ev.preventDefault()
+    ev.stopPropagation()
+  }
+
+  function drop(ev) {
+    ev.preventDefault()
+    ev.stopPropagation()
+    console.log(ev.dataTransfer.files)
+    // add dropped file to input field
+    $('[name=audio-file]')[0].files = ev.dataTransfer.files
+    $('.gform_drop_instructions')[1].innerText = ev.dataTransfer.files[0].name
+    dragDropTarget.classList.remove('dragover');
+  }
+
+  function dropZoneDragleave(ev) {
+      dragDropTarget.classList.remove('dragover');
+  }
+
+  dragDropTarget.addEventListener('drop', drop)
+  dragDropTarget.addEventListener('dragover', dropZoneDragover)
+  dragDropTarget.addEventListener('dragleave', dropZoneDragleave)
 
   // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
   $('#select-audio')[0].onclick = function () {$('[type=file]')[0].click()}
   $('[type=file]')[0].addEventListener('change', function () {
+	$('#select-audio')[0].value = 'Thanks!'
 	var file = $('[type=file]')[0].files[0]
         console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
 	_a = document.createElement('audio')
