@@ -211,6 +211,12 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		jsmediatags.read(file, {
 			  onSuccess: function(tag) {
 			    console.log(tag.tags)
+			    if (tag.tags.artist) {
+				$('[name=artist]')[0].value = tag.tags.artist
+			    }
+			    if (tag.tags.title) {
+				$('[name=track-name]')[0].value = tag.tags.title
+			    }
 			  },
 			  onError: function(error) {
 			    console.log(error)
