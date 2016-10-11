@@ -104,6 +104,9 @@ get_currentuserinfo();
 .dragover {
 background: rgba(84, 235, 128, 0.3);
 }
+.checkbox-checked:before {
+    background: #54E866;
+}
 </style>
 <script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
 <script type="text/javascript">
@@ -166,6 +169,7 @@ background: rgba(84, 235, 128, 0.3);
 
 document.addEventListener("DOMContentLoaded", function(event) { 
   console.log('...it\'s alive!!!')
+
   // not a real jquery :)
   $ = function (x) {return document.querySelectorAll(x)}
   var jsmediatags = window.jsmediatags
@@ -195,6 +199,13 @@ document.addEventListener("DOMContentLoaded", function(event) {
   dragDropTarget.addEventListener('dragover', dropZoneDragover)
   dragDropTarget.addEventListener('dragleave', dropZoneDragleave)
 
+  // super basic hack for checking checkboxes, just for demo
+  ;[].slice.call($('.gfield_checkbox label')).map(function (el) {
+                el.addEventListener('click', function () {
+                   el.classList.toggle('checkbox-checked')
+                })
+  })
+
   // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
   $('#select-audio')[0].onclick = function () {$('[type=file]')[0].click()}
   $('[type=file]')[0].addEventListener('change', function () {
@@ -216,6 +227,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			    }
 			    if (tag.tags.title) {
 				$('[name=track-name]')[0].value = tag.tags.title
+			    }
+			    if (tag.tags.album) {
+				$('[name=album]')[0].value = tag.tags.album
 			    }
 			  },
 			  onError: function(error) {
