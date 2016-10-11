@@ -100,6 +100,7 @@ get_currentuserinfo();
 	</div>
 	</div>
 </div>
+<script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
 <script type="text/javascript">
 /**
  * BASICS:
@@ -160,6 +161,32 @@ get_currentuserinfo();
 
 document.addEventListener("DOMContentLoaded", function(event) { 
   console.log('...it\'s alive!!!')
-});
+  // not a real jquery :)
+  $ = function (x) {return document.querySelectorAll(x)}
+  var jsmediatags = window.jsmediatags;
+
+  // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
+  $('#select-audio')[0].onclick = function () {$('[type=file]')[0].click()}
+  $('[type=file]')[0].addEventListener('change', function () {
+	var file = $('[type=file]')[0].files[0]
+        console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
+	_a = document.createElement('audio')
+	_a.src = URL.createObjectURL(file)
+     	_a.addEventListener('loadedmetadata', function() {
+	        console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
+		console.dir(_a)
+
+		console.log('... and we can also get the ID3 metadata!')
+		jsmediatags.read(file, {
+			  onSuccess: function(tag) {
+			    console.log(tag.tags)
+			  },
+			  onError: function(error) {
+			    console.log(error)
+			  }
+			})
+		})
+	})
+})
 </script>
 <?php get_footer(); ?>
