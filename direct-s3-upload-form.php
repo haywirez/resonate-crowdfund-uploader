@@ -8,7 +8,7 @@ get_currentuserinfo();
 <div class="row">
 	<div class="small-12 large-12 columns" role="main">
 	<?php
-	use \EddTurtle\DirectUpload\Signature;
+	use EddTurtle\DirectUpload\Signature;
 	use Ramsey\Uuid\Uuid;
 	$current_user = wp_get_current_user();
 	$uuid4 = Uuid::uuid4();
