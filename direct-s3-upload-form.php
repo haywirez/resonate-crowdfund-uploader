@@ -33,15 +33,39 @@ get_currentuserinfo();
 			],
 		    ]
 		);
+	$visualUploader = new Signature(
+		    getenv('AWS_ACCESS_KEY_ID'),
+		    getenv('AWS_SECRET_ACCESS_KEY'),
+	            getenv('AWS_S3_BUCKET_NAME'),
+		    getenv('AWS_S3_REGION'),
+		    [
+			'max_file_size' => 2,
+			'expires' => '+10 minutes',
+			'content_type' => 'image/jpeg',
+			'default_filename' => 'test/track/visual/' . $awsUuid . '.jpg',
+			'additional_inputs' => [
+				'x-amz-meta-owner-id' => $current_user->ID
+			],
+		    ]
+		);
 	?>
 	<div class="gform_wrapper">
-	<form action="<?php echo $audioUploader->getFormUrl(); ?>" method="POST" enctype="multipart/form-data">
+	<!-- The two forms, probably best to manipulate by IDs  -->
+	<form action="<?php echo $audioUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
 	    <?php echo $audioUploader->getFormInputsAsHtml(); ?>
 	    <input type="file" name="audio-file" accept="audio/mpeg3" style="opacity: 0;
                     position: absolute;
                     top: 0px;
                     left: 0px;">
 	</form>
+	<form action="<?php echo $visualUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
+	    <?php echo $visualUploader->getFormInputsAsHtml(); ?>
+	    <input type="file" name="visual-file" accept="image/jpeg" style="opacity: 0;
+                    position: absolute;
+                    top: 0px;
+                    left: 0px;">
+	</form>
+	<!--"Fake form" without an actual form (to prevent submitting...) -->
 	    <label for="track-name">Track Name</label>
             <input type="text" name="track-name">
 
@@ -50,7 +74,7 @@ get_currentuserinfo();
 
 	    <label for="artist">Artist Name</label>
             <input type="text" name="artist" value="">
-
+	<!-- here we will probably have to have two upload areas, maybe left/right split? one for the audio, one for the visual (cover art) -->
 	    <div class="gform_fileupload_multifile">
             <div class="gform_drop_area" style="position: relative;">
                 <span class="gform_drop_instructions">Drop files here or </span>
@@ -58,6 +82,7 @@ get_currentuserinfo();
 		<span class="gform_drop_instructions">(mp3, max. 20 MB)</span>
             </div>
             </div>
+	<!-- checkboxes are "fake", but they need to react upon click, and need to be checked. CSS is stolen from WP gravity forms -->
             <div class="ginput_container ginput_container_checkbox">
             	<ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
 		<li class="gfield_checkbox">
