@@ -49,23 +49,23 @@ get_currentuserinfo();
 		    ]
 		);
 	?>
-	<div class="gform_wrapper">
-	<!-- The two forms, probably best to manipulate by IDs  -->
-	<form action="<?php echo $audioUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
-	    <?php echo $audioUploader->getFormInputsAsHtml(); ?>
-	    <input type="file" name="audio-file" accept="audio/mpeg3" style="opacity: 0;
+	<!-- The two real forms that will have to be submitted in sequence, probably best to manipulate by IDs  -->
+        <form action="<?php echo $audioUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
+            <?php echo $audioUploader->getFormInputsAsHtml(); ?>
+            <input type="file" name="audio-file" accept="audio/mpeg3" style="opacity: 0;
                     position: absolute;
                     top: 0px;
                     left: 0px;">
-	</form>
-	<form action="<?php echo $visualUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
-	    <?php echo $visualUploader->getFormInputsAsHtml(); ?>
-	    <input type="file" name="visual-file" accept="image/jpeg" style="opacity: 0;
+        </form>
+        <form action="<?php echo $visualUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
+            <?php echo $visualUploader->getFormInputsAsHtml(); ?>
+            <input type="file" name="visual-file" accept="image/jpeg" style="opacity: 0;
                     position: absolute;
                     top: 0px;
                     left: 0px;">
-	</form>
+        </form>
 	<!--"Fake form" without an actual form (to prevent submitting...) -->
+	<div class="gform_wrapper">
 	    <label for="track-name">Track Name</label>
             <input type="text" name="track-name">
 
@@ -106,6 +106,48 @@ background: rgba(84, 235, 128, 0.3);
 }
 .checkbox-checked:before {
     background: #54E866;
+}
+
+// animation
+@-webkit-keyframes shake {
+    0%, 100% {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+    }
+
+    10%, 30%, 50%, 70%, 90% {
+        -webkit-transform: translate3d(-5px, 0, 0);
+        transform: translate3d(-5px, 0, 0);
+    }
+
+    20%, 40%, 60%, 80% {
+        -webkit-transform: translate3d(5px, 0, 0);
+        transform: translate3d(5px, 0, 0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+    }
+
+    10%, 30%, 50%, 70%, 90% {
+        -webkit-transform: translate3d(-5px, 0, 0);
+        transform: translate3d(-5px, 0, 0);
+    }
+
+    20%, 40%, 60%, 80% {
+        -webkit-transform: translate3d(5px, 0, 0);
+        transform: translate3d(5px, 0, 0);
+    }
+}
+
+.shake {
+    -webkit-animation-name: shake;
+    animation-name: shake;
+    -webkit-animation-duration: 1s;
+    animation-duration: 1s; 
 }
 </style>
 <script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
@@ -170,9 +212,10 @@ background: rgba(84, 235, 128, 0.3);
 document.addEventListener("DOMContentLoaded", function(event) { 
   console.log('...it\'s alive!!!')
 
-  // not a real jquery :)
+  // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
   $ = function (x) {return document.querySelectorAll(x)}
-  var jsmediatags = window.jsmediatags
+  
+  // drag & drop section
   var dragDropTarget = $('.gform_fileupload_multifile')[0]
 
   function dropZoneDragover(ev) {
@@ -210,14 +253,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
   $('#select-audio')[0].onclick = function () {$('[type=file]')[0].click()}
   $('[type=file]')[0].addEventListener('change', function () {
 	$('#select-audio')[0].value = 'Thanks!'
+	var jsmediatags = window.jsmediatags
 	var file = $('[type=file]')[0].files[0]
         console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
 	_a = document.createElement('audio')
 	_a.src = URL.createObjectURL(file)
      	_a.addEventListener('loadedmetadata', function() {
 	        console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
+                // not implemented yet, make sure to add duration to the hidden field x-amz-meta-track-duration
 		console.dir(_a)
-
 		console.log('... and we can also get the ID3 metadata!')
 		jsmediatags.read(file, {
 			  onSuccess: function(tag) {
@@ -238,6 +282,26 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			})
 		})
 	})
+  function validateForm () {
+     /**
+     * Validation placeholder:
+     * -- input fields cannot be empty / must be strings
+     * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
+     * -- all terms & conditions checkboxes must be in a checked state
+     * -- hidden fields in both signed forms must be populated and equal the values of the inputs
+     * -- if not valid, add a red border to the missing places, and perhaps an explanation box
+     */ 
+     return false;
+  }
+  $('.upload-button')[0].addEventListener('click', function (e) {
+     // shake for now if not valid
+     if (!validateForm()) {
+       e.target.classList.add('shake')
+       setTimeout(function () {
+         e.target.classList.remove('shake')
+       }, 3000) 
+     }
+  })   
 })
 </script>
 <?php get_footer(); ?>
