@@ -68,11 +68,14 @@ $visualUploader = new Signature(
 	<div class="small-12 large-12 columns" role="main">
         <div class="gform_wrapper">
             <label for="track-name">Track Name</label>
-                <input type="text" name="track-name">
+            <div class="error-message track-name-error"></div>
+                <input type="text" name="track-name" id="track-name">
             <label for="album">Album</label>
-                <input type="text" name="album">
+            <div class="error-message album-name-error"></div>
+                <input type="text" name="album" id="album-name">
             <label for="artist">Artist Name</label>
-                <input type="text" name="artist" value="">
+            <div class="error-message artist-name-error"></div>
+                <input type="text" name="artist" value="" id="artist-name">
         <!-- here we will probably have to have two upload areas, maybe left/right split? one for the audio, one for the visual (cover art) -->
         <div class="row">
             <div class="small-12 large-4 columns" role="visual-upload-area">
@@ -89,6 +92,7 @@ $visualUploader = new Signature(
             </div>
         </div>
         <!-- checkboxes are "fake", but they need to react upon click, and need to be checked. CSS is stolen from WP gravity forms -->
+            <div class="error-message" id="terms-error-message"></div>
             <div class="ginput_container ginput_container_checkbox">
                 <ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
                     <li class="gfield_checkbox">
@@ -156,6 +160,14 @@ background: rgba(84, 235, 128, 0.3);
     -webkit-animation-duration: 1s;
     animation-duration: 1s; 
 }
+.error-message {
+  color: red;
+  font-size: 12px;
+}
+input.error {
+  border: 2px solid red;
+  margin-bottom: 1rem;
+}
 </style>
 <script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
 <script type="text/javascript">
@@ -176,8 +188,6 @@ background: rgba(84, 235, 128, 0.3);
  * =====
  * TODO:
  * =====
- *
- * Fix Firefox drag & drop event -> select file
  * 
  * We will actually need to create 2 signed forms + a fake form used for the inputs.
  * - for the audio file
@@ -218,8 +228,6 @@ background: rgba(84, 235, 128, 0.3);
  * https://css-tricks.com/drag-and-drop-file-uploading/
  * Extract duration from audio file:
  * https://jsfiddle.net/derickbailey/s4P2v/
- * Somehow convert the extracted image to a blob and send as a file to S3:
- * http://blog.danguer.com/2011/10/25/upload-s3-files-directly-with-ajax/
  * 
  * Hit me up on the resonate slack @attila for questions, I'll try to help
  */ 
@@ -240,7 +248,6 @@ document.addEventListener('DOMContentLoaded', function (event) {
   }
 
   function drop (ev) {
-    // needs to be fixed for Firefox, doesn't work
     ev.preventDefault()
     ev.stopPropagation()
     console.log(ev.dataTransfer.files)
@@ -271,7 +278,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
     return blob
   }
   function validateForm () {
-    /**
+    nameInputsValid()
+    termsAndCondValid()    
+/**
     * Validation placeholder:
     * -- input fields cannot be empty / must be strings
     * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
@@ -281,9 +290,58 @@ document.addEventListener('DOMContentLoaded', function (event) {
     */
     return false
   }
-  function sendForms () {
-    // send the two forms somehow, most difficult part is to add a new file formdata field containing a blob from extracted image
+  function  nameInputsValid() {
+    var trackName = $('#track-name')[0]
+    var artistName = $('#artist-name')[0]
+    var albumName = $('#album-name')[0]
+    var returnValue = true;
+    console.log('trackName', trackName.value)
+    console.log('artistName', artistName.value)
+    console.log('albumName', albumName.value)
+
+    if(!trackName.value) {
+      $('.track-name-error')[0].innerText = "Please enter a title for the track"
+      if(trackName.className.indexOf('error') === -1) { trackName.className += 'error'; }
+      returnValue = false
+    } else { 
+      trackName.className = ""
+      $('.track-name-error')[0].innerText = ""
+    }
+    if(!artistName.value) {
+      $('.artist-name-error')[0].innerText = 'Please enter the artist name'
+      if(artistName.className.indexOf('error') === -1) { artistName.className += 'error'; }
+      returnValue = false
+    } else {
+      artistName.className = ""
+      $('.artist-name-error')[0].innerText = ""
+    }
+    if(!albumName.value) {
+      $('.album-name-error')[0].innerText = 'Please enter the name of the album'
+      if(albumName.className.indexOf('error') === -1) { albumName.className += 'error'; }
+      returnValue = false
+    } else {
+      albumName.className = ""
+      $('.album-name-error')[0].innerText = ""
+    }
+    return returnValue
   }
+
+  function termsAndCondValid() {
+    var chkbxs = $('.gfield_checkbox')
+    var returnValue = true
+    chkbxs.forEach(function(bx){
+      var box = bx.getElementsByTagName('label')[0]
+      if(!box.className.indexOf('checkbox-checked') > -1) {
+        $('#terms-error-message')[0].innerText = "Please check the following boxes. However if all these terms are not valid, please do not upload this music to our serveice. Thank you";
+        reutrnValue = false;
+      } else {
+        $('#terms-error-message')[0].innerText = "";
+      }
+      console.log(bx.getElementsByTagName('label')[0])
+    }) 
+    return returnValue
+  }
+
 
   dragDropTarget.addEventListener('drop', drop)
   dragDropTarget.addEventListener('dragover', dropZoneDragover)
@@ -329,6 +387,10 @@ document.addEventListener('DOMContentLoaded', function (event) {
             }
             var base64 = 'data:' + tag.tags.picture.format + ';base64,' + window.btoa(base64String)
             $('#image-preview')[0].src = base64
+
+            // attempting to set image for the given file input
+            $('[name=visual-file]')[0].files[0] = new File([b64toBlob(window.btoa(base64String), tag.tags.picture.format)], 'extracted-image.jpg')
+            console.log($('[name=visual-file]')[0].files)
           }
         },
         onError: function (error) {
