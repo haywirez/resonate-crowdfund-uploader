@@ -1,105 +1,112 @@
 <?php
 /* Template Name: Direct S3 Form */
 require_once(__DIR__ . '/vendor/autoload.php');
+
+use EddTurtle\DirectUpload\Signature;
+use Ramsey\Uuid\Uuid;
+
 get_header();
 get_currentuserinfo();
+
+$current_user = wp_get_current_user();
+$uuid4 = Uuid::uuid4();
+$awsUuid = $uuid4->toString();
+$audioUploader = new Signature(
+        getenv('AWS_ACCESS_KEY_ID'),
+        getenv('AWS_SECRET_ACCESS_KEY'),
+            getenv('AWS_S3_BUCKET_NAME'),
+        getenv('AWS_S3_REGION'),
+        [
+        'max_file_size' => 20,
+        'expires' => '+10 minutes',
+        'content_type' => 'audio/mpeg3',
+        'default_filename' => 'test/track/audio/' . $awsUuid . '.mp3',
+        'additional_inputs' => [
+            'x-amz-meta-artist' => '',
+            'x-amz-meta-track-name' => '',
+            'x-amz-meta-album' => '',
+            'x-amz-meta-track-duration' => '',
+            'x-amz-meta-visual-key' => $awsUuid,
+            'x-amz-meta-owner-id' => $current_user->ID
+        ],
+        ]
+    );
+$visualUploader = new Signature(
+        getenv('AWS_ACCESS_KEY_ID'),
+        getenv('AWS_SECRET_ACCESS_KEY'),
+            getenv('AWS_S3_BUCKET_NAME'),
+        getenv('AWS_S3_REGION'),
+        [
+        'max_file_size' => 2,
+        'expires' => '+10 minutes',
+        'content_type' => 'image/jpeg',
+        'default_filename' => 'test/track/visual/' . $awsUuid . '.jpg',
+        'additional_inputs' => [
+            'x-amz-meta-owner-id' => $current_user->ID
+        ],
+        ]
+    );
 ?>
 <link rel='stylesheet' href='https://resonate.is/wp-content/plugins/gravityforms/css/formsmain.min.css' type='text/css' media='all' />
+<!-- The two real forms that will have to be submitted in sequence, probably best to manipulate by IDs  -->
+<form action="<?php echo $audioUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
+    <?php echo $audioUploader->getFormInputsAsHtml(); ?>
+    <input type="file" name="audio-file" accept="audio/mpeg3" style="opacity: 0;
+            position: absolute;
+            top: 0px;
+            left: 0px;">
+</form>
+<form action="<?php echo $visualUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
+    <?php echo $visualUploader->getFormInputsAsHtml(); ?>
+    <input type="file" name="visual-file" accept="image/jpeg" style="opacity: 0;
+            position: absolute;
+            top: 0px;
+            left: 0px;">
+</form>
+<form id="fake-form">
 <div class="row">
 	<div class="small-12 large-12 columns" role="main">
-	<?php
-	use EddTurtle\DirectUpload\Signature;
-	use Ramsey\Uuid\Uuid;
-	$current_user = wp_get_current_user();
-	$uuid4 = Uuid::uuid4();
-	$awsUuid = $uuid4->toString();
-	$audioUploader = new Signature(
-		    getenv('AWS_ACCESS_KEY_ID'),
-		    getenv('AWS_SECRET_ACCESS_KEY'),
-	            getenv('AWS_S3_BUCKET_NAME'),
-		    getenv('AWS_S3_REGION'),
-		    [
-			'max_file_size' => 20,
-			'expires' => '+10 minutes',
-			'content_type' => 'audio/mpeg3',
-			'default_filename' => 'test/track/audio/' . $awsUuid . '.mp3',
-			'additional_inputs' => [
-				'x-amz-meta-artist' => '',
-				'x-amz-meta-track-name' => '',
-				'x-amz-meta-album' => '',
-				'x-amz-meta-track-duration' => '',
-				'x-amz-meta-visual-key' => $awsUuid,
-				'x-amz-meta-owner-id' => $current_user->ID
-			],
-		    ]
-		);
-	$visualUploader = new Signature(
-		    getenv('AWS_ACCESS_KEY_ID'),
-		    getenv('AWS_SECRET_ACCESS_KEY'),
-	            getenv('AWS_S3_BUCKET_NAME'),
-		    getenv('AWS_S3_REGION'),
-		    [
-			'max_file_size' => 2,
-			'expires' => '+10 minutes',
-			'content_type' => 'image/jpeg',
-			'default_filename' => 'test/track/visual/' . $awsUuid . '.jpg',
-			'additional_inputs' => [
-				'x-amz-meta-owner-id' => $current_user->ID
-			],
-		    ]
-		);
-	?>
-	<!-- The two real forms that will have to be submitted in sequence, probably best to manipulate by IDs  -->
-        <form action="<?php echo $audioUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
-            <?php echo $audioUploader->getFormInputsAsHtml(); ?>
-            <input type="file" name="audio-file" accept="audio/mpeg3" style="opacity: 0;
-                    position: absolute;
-                    top: 0px;
-                    left: 0px;">
-        </form>
-        <form action="<?php echo $visualUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
-            <?php echo $visualUploader->getFormInputsAsHtml(); ?>
-            <input type="file" name="visual-file" accept="image/jpeg" style="opacity: 0;
-                    position: absolute;
-                    top: 0px;
-                    left: 0px;">
-        </form>
-	<!--"Fake form" without an actual form (to prevent submitting...) -->
-	<div class="gform_wrapper">
-	    <label for="track-name">Track Name</label>
-            <input type="text" name="track-name">
-
-	    <label for="album">Album</label>
-            <input type="text" name="album">
-
-	    <label for="artist">Artist Name</label>
-            <input type="text" name="artist" value="">
-	<!-- here we will probably have to have two upload areas, maybe left/right split? one for the audio, one for the visual (cover art) -->
-	    <div class="gform_fileupload_multifile">
-            <div class="gform_drop_area" style="position: relative;">
-                <span class="gform_drop_instructions">Drop files here or </span>
-                <input id="select-audio" type="button" value="Select files" class="button gform_button_select_files" style="z-index: 1;">
-		<span class="gform_drop_instructions">(mp3, max. 20 MB)</span>
+        <div class="gform_wrapper">
+            <label for="track-name">Track Name</label>
+                <input type="text" name="track-name">
+            <label for="album">Album</label>
+                <input type="text" name="album">
+            <label for="artist">Artist Name</label>
+                <input type="text" name="artist" value="">
+        <!-- here we will probably have to have two upload areas, maybe left/right split? one for the audio, one for the visual (cover art) -->
+        <div class="row">
+            <div class="small-12 large-4 columns" role="visual-upload-area">
+                <img src="" class="hidden" id="image-preview">
             </div>
+            <div class="small-12 large-8 columns" role="audio-upload-area">
+                <div class="gform_fileupload_multifile">
+                    <div class="gform_drop_area" style="position: relative;">
+                        <span class="gform_drop_instructions">Drop files here or </span>
+                        <input id="select-audio" type="button" value="Select files" class="button gform_button_select_files" style="z-index: 1;">
+                        <span class="gform_drop_instructions">(mp3, max. 20 MB)</span>
+                    </div>
+                </div>
             </div>
-	<!-- checkboxes are "fake", but they need to react upon click, and need to be checked. CSS is stolen from WP gravity forms -->
+        </div>
+        <!-- checkboxes are "fake", but they need to react upon click, and need to be checked. CSS is stolen from WP gravity forms -->
             <div class="ginput_container ginput_container_checkbox">
-            	<ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
-		<li class="gfield_checkbox">
-			    <label for="x-amz-meta-no-covers">These songs are 100% written by me or my band. NO COVERS.</label>
-			</li>
-			<li class="gfield_checkbox">
-			    <label for="x-amz-meta-streaming-agreement" >Resonate may stream these songs for free during the crowd campaign</label>
-			</li>
-			<li class="gfield_checkbox">
-			   <label for="x-amz-meta-song-title-information" >All song titles, artist names and artwork are included in these files.</label>
-			</li>
-		</ul>
+                <ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
+                    <li class="gfield_checkbox">
+                        <label for="x-amz-meta-no-covers">These songs are 100% written by me or my band. NO COVERS.</label>
+                    </li>
+                    <li class="gfield_checkbox">
+                        <label for="x-amz-meta-streaming-agreement" >Resonate may stream these songs for free during the crowd campaign</label>
+                    </li>
+                    <li class="gfield_checkbox">
+                    <label for="x-amz-meta-song-title-information" >All song titles, artist names and artwork are included in these files.</label>
+                    </li>
+                </ul>
             </div>
             <div class="upload-button button disabled">Upload</div>
-	</div>
+        </div>
 	</div>
 </div>
+</form>
 <style>
 .dragover {
 background: rgba(84, 235, 128, 0.3);
@@ -153,8 +160,10 @@ background: rgba(84, 235, 128, 0.3);
 <script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
 <script type="text/javascript">
 /**
+ * ====== 
  * BASICS:
- * 
+ * ======
+ *
  * What the php code is doing is creating a signed form that the AWS S3 endpoint will accept upon POSTing.
  * It contains a JSON policy that is signed server side by the API key - the policy contains information 
  * about filesize limits, destination, allowed form fields and values. This way we don't have to send anything through our server,
@@ -167,12 +176,12 @@ background: rgba(84, 235, 128, 0.3);
  * =====
  * TODO:
  * =====
+ *
+ * Fix Firefox drag & drop event -> select file
  * 
  * We will actually need to create 2 signed forms + a fake form used for the inputs.
  * - for the audio file
  * - for the cover art image
- * 
- * Right now there's probably just one signed form ($audioUploader) in page.
  * 
  * These two forms have to be submitted via AJAX, because we want to stay on the page to do some additional processing.
  * The php code contains a generated UUID, this server as the common identifier for the files for now: 
@@ -184,8 +193,12 @@ background: rgba(84, 235, 128, 0.3);
  *  Upload button onClick event  -> validate form
  *                                  -> if not valid, show error messages
  *                                  -> if valid, fill x-amz-meta-track-name etc. hidden fields (VERY IMPORTANT)
- *                                       -> send both forms via an ajax POST request
+ *                                       -> send both forms via an ajax POST request, in sequence (mp3, visual)
  *                                          -> if successful (returns statusCode 201, created), drop the UUID into a localStorage field.
+                                                submitted: {
+                                                    audio: $uuid
+                                                    visual: $uuid
+                                                }
  *                                          -> show a visual indicator of success on the frontend UI (checkmark appers, flashing)
  *                                          -> BONUS: send another post to a php endpoint that will save the metadata 
  *                                             (track name, uuid, etc) into a custom WP post type for the logged in user. this will come handy
@@ -193,7 +206,7 @@ background: rgba(84, 235, 128, 0.3);
  * 
  *  BONUS: 
  *  - preview cover art after selecting image file
- *  - extract duration from audio file after selecting
+ *  - extract metadata, images duration from audio file after selecting
  * 
  *  Test the form AJAX in all major browsers
  *  Work on CSS (currently uses some stolen classes from WP GravityForms)   
@@ -205,37 +218,71 @@ background: rgba(84, 235, 128, 0.3);
  * https://css-tricks.com/drag-and-drop-file-uploading/
  * Extract duration from audio file:
  * https://jsfiddle.net/derickbailey/s4P2v/
+ * Somehow convert the extracted image to a blob and send as a file to S3:
+ * http://blog.danguer.com/2011/10/25/upload-s3-files-directly-with-ajax/
  * 
  * Hit me up on the resonate slack @attila for questions, I'll try to help
  */ 
 
-document.addEventListener("DOMContentLoaded", function(event) { 
-  console.log('...it\'s alive!!!')
+document.addEventListener('DOMContentLoaded', function (event) {
+  console.log("...it's alive!!!")
 
   // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
   $ = function (x) {return document.querySelectorAll(x)}
-  
+
   // drag & drop section
   var dragDropTarget = $('.gform_fileupload_multifile')[0]
 
-  function dropZoneDragover(ev) {
-    dragDropTarget.classList.add('dragover');
+  function dropZoneDragover (ev) {
+    dragDropTarget.classList.add('dragover')
     ev.preventDefault()
     ev.stopPropagation()
   }
 
-  function drop(ev) {
+  function drop (ev) {
+    // needs to be fixed for Firefox, doesn't work
     ev.preventDefault()
     ev.stopPropagation()
     console.log(ev.dataTransfer.files)
     // add dropped file to input field
     $('[name=audio-file]')[0].files = ev.dataTransfer.files
     $('.gform_drop_instructions')[1].innerText = ev.dataTransfer.files[0].name
-    dragDropTarget.classList.remove('dragover');
+    dragDropTarget.classList.remove('dragover')
   }
 
-  function dropZoneDragleave(ev) {
-      dragDropTarget.classList.remove('dragover');
+  function dropZoneDragleave (ev) {
+    dragDropTarget.classList.remove('dragover')
+  }
+  function b64toBlob (b64Data, contentType, sliceSize) {
+    contentType = contentType || ''
+    sliceSize = sliceSize || 512
+    var byteCharacters = atob(b64Data)
+    var byteArrays = []
+    for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      var slice = byteCharacters.slice(offset, offset + sliceSize)
+      var byteNumbers = new Array(slice.length)
+      for (var i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i)
+      }
+      var byteArray = new Uint8Array(byteNumbers)
+      byteArrays.push(byteArray)
+    }
+    var blob = new Blob(byteArrays, {type: contentType})
+    return blob
+  }
+  function validateForm () {
+    /**
+    * Validation placeholder:
+    * -- input fields cannot be empty / must be strings
+    * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
+    * -- all terms & conditions checkboxes must be in a checked state
+    * -- hidden fields in both signed forms must be populated and equal the values of the inputs
+    * -- if not valid, add a red border to the missing places, and perhaps an explanation box
+    */
+    return false
+  }
+  function sendForms () {
+    // send the two forms somehow, most difficult part is to add a new file formdata field containing a blob from extracted image
   }
 
   dragDropTarget.addEventListener('drop', drop)
@@ -244,64 +291,62 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
   // super basic hack for checking checkboxes, just for demo
   ;[].slice.call($('.gfield_checkbox label')).map(function (el) {
-                el.addEventListener('click', function () {
-                   el.classList.toggle('checkbox-checked')
-                })
+    el.addEventListener('click', function () {
+      el.classList.toggle('checkbox-checked')
+    })
   })
 
   // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
   $('#select-audio')[0].onclick = function () {$('[type=file]')[0].click()}
   $('[type=file]')[0].addEventListener('change', function () {
-	$('#select-audio')[0].value = 'Thanks!'
-	var jsmediatags = window.jsmediatags
-	var file = $('[type=file]')[0].files[0]
-        console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
-	_a = document.createElement('audio')
-	_a.src = URL.createObjectURL(file)
-     	_a.addEventListener('loadedmetadata', function() {
-	        console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
-                // not implemented yet, make sure to add duration to the hidden field x-amz-meta-track-duration
-		console.dir(_a)
-		console.log('... and we can also get the ID3 metadata!')
-		jsmediatags.read(file, {
-			  onSuccess: function(tag) {
-			    console.log(tag.tags)
-			    if (tag.tags.artist) {
-				$('[name=artist]')[0].value = tag.tags.artist
-			    }
-			    if (tag.tags.title) {
-				$('[name=track-name]')[0].value = tag.tags.title
-			    }
-			    if (tag.tags.album) {
-				$('[name=album]')[0].value = tag.tags.album
-			    }
-			  },
-			  onError: function(error) {
-			    console.log(error)
-			  }
-			})
-		})
-	})
-  function validateForm () {
-     /**
-     * Validation placeholder:
-     * -- input fields cannot be empty / must be strings
-     * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
-     * -- all terms & conditions checkboxes must be in a checked state
-     * -- hidden fields in both signed forms must be populated and equal the values of the inputs
-     * -- if not valid, add a red border to the missing places, and perhaps an explanation box
-     */ 
-     return false;
-  }
+    $('#select-audio')[0].value = 'Thanks!'
+    var jsmediatags = window.jsmediatags
+    var file = $('[type=file]')[0].files[0]
+    console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
+    _a = document.createElement('audio')
+    _a.src = URL.createObjectURL(file)
+    _a.addEventListener('loadedmetadata', function () {
+      console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
+      // not implemented yet, make sure to add duration to the hidden field x-amz-meta-track-duration
+      console.dir(_a)
+      console.log('... and we can also get the ID3 metadata!')
+      jsmediatags.read(file, {
+        onSuccess: function (tag) {
+          console.log(tag.tags)
+          if (tag.tags.artist) {
+            $('[name=artist]')[0].value = tag.tags.artist
+          }
+          if (tag.tags.title) {
+            $('[name=track-name]')[0].value = tag.tags.title
+          }
+          if (tag.tags.album) {
+            $('[name=album]')[0].value = tag.tags.album
+          }
+          if (tag.tags.picture) {
+            var base64String = ''
+            for (var i = 0; i < tag.tags.picture.data.length; i++) {
+              base64String += String.fromCharCode(tag.tags.picture.data[i])
+            }
+            var base64 = 'data:' + tag.tags.picture.format + ';base64,' + window.btoa(base64String)
+            $('#image-preview')[0].src = base64
+          }
+        },
+        onError: function (error) {
+          console.log(error)
+        }
+      })
+    })
+  })
   $('.upload-button')[0].addEventListener('click', function (e) {
-     // shake for now if not valid
-     if (!validateForm()) {
-       e.target.classList.add('shake')
-       setTimeout(function () {
-         e.target.classList.remove('shake')
-       }, 3000) 
-     }
-  })   
+    // shake for now if not valid
+    if (!validateForm()) {
+      e.target.classList.add('shake')
+      setTimeout(function () {
+        e.target.classList.remove('shake')
+      }, 3000)
+    }
+  })
 })
+
 </script>
 <?php get_footer(); ?>
