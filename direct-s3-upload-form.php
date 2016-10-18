@@ -294,18 +294,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
     }
 
-    function validateForm () {
-        nameInputsValid()
-        termsAndCondValid()
-        /**
-         * Validation placeholder:
-         * -- input fields cannot be empty / must be strings
-         * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
-         * -- all terms & conditions checkboxes must be in a checked state
-         * -- hidden fields in both signed forms must be populated and equal the values of the inputs
-         * -- if not valid, add a red border to the missing places, and perhaps an explanation box
-         */
-        if (!window.overrideForm) {
+    function submitForm() {
+      var validForm = validateForm()
+
+     
+        if (!window.overrideForm || !validForm) {
             return false
         } else {
             console.log('%call form fields are filled out & valid.', 'color: #00FF00')
@@ -366,14 +359,23 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
     }
 
+    function validateForm () {
+        /**
+         * Validation placeholder:
+         * -- input fields cannot be empty / must be strings
+         * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
+         * -- all terms & conditions checkboxes must be in a checked state
+         * -- hidden fields in both signed forms must be populated and equal the values of the inputs
+         * -- if not valid, add a red border to the missing places, and perhaps an explanation box
+         */
+        return (nameInputsValid() && termsAndCondValid())
+    }
+
     function nameInputsValid () {
         var trackName = $('#track-name')[0]
         var artistName = $('#artist-name')[0]
         var albumName = $('#album-name')[0]
         var returnValue = true
-        console.log('trackName', trackName.value)
-        console.log('artistName', artistName.value)
-        console.log('albumName', albumName.value)
 
         if (!trackName.value) {
             $('.track-name-error')[0].innerText = 'Please enter a title for the track'
@@ -435,6 +437,25 @@ document.addEventListener('DOMContentLoaded', function (event) {
         })
     })
 
+    // onblur handlers for input fields
+    var trackName = $('#track-name')[0]
+    trackName.addEventListener('blur', function () {
+      $('[name=x-amz-meta-track-name]')[0].value = trackName.value
+      validateForm()
+    })
+
+    var artistName = $('#artist-name')[0]
+    artistName.addEventListener('blur', function () {
+      $('[name=x-amz-meta-artist]')[0].value = artistName.value
+      validateForm()
+    })
+    
+    var albumName = $('#album-name')[0]
+    albumName.addEventListener('blur', function () {
+      $('[name=x-amz-meta-album]')[0].value = albumName.value
+      validateForm()
+    })
+
     // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
     $('#select-audio')[0].onclick = function () {
         $('#audio-file-input')[0].click()
@@ -451,7 +472,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
         _a.src = URL.createObjectURL(file)
         _a.addEventListener('loadedmetadata', function () {
             console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
-            // not implemented yet, make sure to add duration to the hidden field x-amz-meta-track-duration
+            var songDurationSeconds = ( Math.floor(_a.duration % 60 ) < 10 ? '0' : '' ) + Math.floor( _a.duration % 60 );
+	    var songDurationMinutes = Math.floor( _a.duration / 60 );
+            $('[name="x-amz-meta-track-duration"]')[0].value = songDurationMinutes + ':' + songDurationSeconds;
             console.dir(_a)
             console.log('... and we can also get the ID3 metadata!')
             jsmediatags.read(file, {
@@ -459,12 +482,15 @@ document.addEventListener('DOMContentLoaded', function (event) {
                     console.log(tag.tags)
                     if (tag.tags.artist) {
                         $('[name=artist]')[0].value = tag.tags.artist
+                        $('[name="x-amz-meta-artist"]')[0].value = tag.tags.artist
                     }
                     if (tag.tags.title) {
                         $('[name=track-name]')[0].value = tag.tags.title
+                        $('[name=x-amz-meta-track-name]')[0].value = tag.tags.title
                     }
                     if (tag.tags.album) {
                         $('[name=album]')[0].value = tag.tags.album
+                        $('[name=x-amz-meta-album]')[0].value = tag.tags.album
                     }
                     if (tag.tags.picture) {
                         var base64String = ''
@@ -480,6 +506,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
                         var extractedImageBlob = b64toBlob(window.btoa(base64String), tag.tags.picture.format)
                         console.log(extractedImageBlob)
                     }
+
+                    //do something
+                    window.setTimeout(function() { validateForm() }, 500)
                 },
                 onError: function (error) {
                     console.log(error)
@@ -489,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     })
     $('.upload-button')[0].addEventListener('click', function (e) {
         // shake for now if not valid
-        if (!validateForm()) {
+        if (!submitForm()) {
             e.target.classList.add('shake')
             setTimeout(function () {
                 e.target.classList.remove('shake')
