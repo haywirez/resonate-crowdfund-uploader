@@ -171,6 +171,7 @@ input.error {
 }
 </style>
 <script type="text/javascript" src="https://cdn.rawgit.com/aadsm/jsmediatags/master/dist/jsmediatags.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
 <script type="text/javascript">
 /**
  * ====== 
@@ -231,230 +232,264 @@ input.error {
  * https://jsfiddle.net/derickbailey/s4P2v/
  * 
  * Hit me up on the resonate slack @attila for questions, I'll try to help
- */ 
-
+ */
 document.addEventListener('DOMContentLoaded', function (event) {
-  console.log("...it's alive!!!")
+    console.log("...it's alive!!!")
 
-  // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
-  $ = function (x) {return document.querySelectorAll(x)}
-
-  // drag & drop section
-  var dragDropTarget = $('.gform_fileupload_multifile')[0]
-
-  function dropZoneDragover (ev) {
-    dragDropTarget.classList.add('dragover')
-    ev.preventDefault()
-    ev.stopPropagation()
-  }
-
-  function drop (ev) {
-    ev.preventDefault()
-    ev.stopPropagation()
-    console.log(ev.dataTransfer.files)
-    // add dropped file to input field
-    $('#audio-file-input')[0].files = ev.dataTransfer.files
-    $('.gform_drop_instructions')[1].innerText = ev.dataTransfer.files[0].name
-    dragDropTarget.classList.remove('dragover')
-  }
-
-  function dropZoneDragleave (ev) {
-    dragDropTarget.classList.remove('dragover')
-  }
-  function b64toBlob (b64Data, contentType, sliceSize) {
-    contentType = contentType || ''
-    sliceSize = sliceSize || 512
-    var byteCharacters = atob(b64Data)
-    var byteArrays = []
-    for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-      var slice = byteCharacters.slice(offset, offset + sliceSize)
-      var byteNumbers = new Array(slice.length)
-      for (var i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i)
-      }
-      var byteArray = new Uint8Array(byteNumbers)
-      byteArrays.push(byteArray)
+    // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
+    var $ = function (x) {
+        return document.querySelectorAll(x)
     }
-    var blob = new Blob(byteArrays, {type: contentType})
-    return blob
-  }
-  function validateForm () {
-    nameInputsValid()
-    termsAndCondValid()    
-    /**
-    * Validation placeholder:
-    * -- input fields cannot be empty / must be strings
-    * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
-    * -- all terms & conditions checkboxes must be in a checked state
-    * -- hidden fields in both signed forms must be populated and equal the values of the inputs
-    * -- if not valid, add a red border to the missing places, and perhaps an explanation box
-    */
-    if (!window.overrideForm) {
-      return false
-    } else {
-      console.log('%call form fields are filled out & valid.', 'color: #00FF00')
-      console.log('%cattempting audio form submission...', 'font-weight: bold')
-      jQuery.ajax({
-            type: 'POST',
-            url: $('#audio-form')[0].getAttribute('action'),
-            data: new FormData($('#audio-form')[0]),
-            crossDomain: true,
-            processData: false,
-            dataType: 'xml',
-            cache: false,
-            contentType: false,
-            success: function (data) {
-                console.log('audio form submission %cok','background: #222; color: #bada55')
-                console.log(data)
-            },
-            error: function (err) {
-                console.log(err)
+
+    // drag & drop section
+    var dragDropTarget = $('.gform_fileupload_multifile')[0]
+
+    function dropZoneDragover (ev) {
+        dragDropTarget.classList.add('dragover')
+        ev.preventDefault()
+        ev.stopPropagation()
+    }
+
+    function drop (ev) {
+        ev.preventDefault()
+        ev.stopPropagation()
+        console.log(ev.dataTransfer.files)
+        // add dropped file to input field
+        $('#audio-file-input')[0].files = ev.dataTransfer.files
+        $('.gform_drop_instructions')[1].innerText = ev.dataTransfer.files[0].name
+        dragDropTarget.classList.remove('dragover')
+    }
+
+    function dropZoneDragleave (ev) {
+        dragDropTarget.classList.remove('dragover')
+    }
+
+    function b64toBlob (b64Data, contentType, sliceSize) {
+        contentType = contentType || ''
+        sliceSize = sliceSize || 512
+        var byteCharacters = atob(b64Data)
+        var byteArrays = []
+        for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            var slice = byteCharacters.slice(offset, offset + sliceSize)
+            var byteNumbers = new Array(slice.length)
+            for (var i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i)
             }
-        }).then(function () {   
-          console.log('%cattempting visual form submission...', 'font-weight: bold')
-          jQuery.ajax({
-            type: 'POST',
-            url: $('#visual-form')[0].getAttribute('action'),
-            data: new FormData($('#visual-form')[0]),
-            crossDomain: true,
-            processData: false,
-            dataType: 'xml',
-            cache: false,
-            contentType: false,
-            success: function (data) {
-                console.log('visual form submission %cok','background: #222; color: #bada55')
-		console.log(data)
-            },
-            error: function (err) {
-                console.log(err)
-            }	
-	  })
-        })
-       return true
-    }
-  }
-  function  nameInputsValid() {
-    var trackName = $('#track-name')[0]
-    var artistName = $('#artist-name')[0]
-    var albumName = $('#album-name')[0]
-    var returnValue = true;
-    console.log('trackName', trackName.value)
-    console.log('artistName', artistName.value)
-    console.log('albumName', albumName.value)
-
-    if(!trackName.value) {
-      $('.track-name-error')[0].innerText = "Please enter a title for the track"
-      if(trackName.className.indexOf('error') === -1) { trackName.classList.add('error') }
-      returnValue = false
-    } else { 
-      trackName.className = ""
-      $('.track-name-error')[0].innerText = ""
-    }
-    if(!artistName.value) {
-      $('.artist-name-error')[0].innerText = 'Please enter the artist name'
-      if(artistName.className.indexOf('error') === -1) { artistName.classList.add('error') }
-      returnValue = false
-    } else {
-      artistName.className = ""
-      $('.artist-name-error')[0].innerText = ""
-    }
-    if(!albumName.value) {
-      $('.album-name-error')[0].innerText = 'Please enter the name of the album'
-      if(albumName.className.indexOf('error') === -1) { albumName.classList.add('error') }
-      returnValue = false
-    } else {
-      albumName.className = ""
-      $('.album-name-error')[0].innerText = ""
-    }
-    return returnValue
-  }
-
-  function termsAndCondValid() {
-    var chkbxs = $('.gfield_checkbox')
-    var returnValue = true
-    chkbxs.forEach(function(bx){
-      var box = bx.getElementsByTagName('label')[0]
-      if(box.className.indexOf('checkbox-checked') === -1) {
-        $('#terms-error-message')[0].innerText = "Please check the following boxes. Thank you";
-        returnValue = false;
-      } else {
-        $('#terms-error-message')[0].innerText = "";
-      }
-      console.log(bx.getElementsByTagName('label')[0])
-    }) 
-    return returnValue
-  }
-
-
-  dragDropTarget.addEventListener('drop', drop)
-  dragDropTarget.addEventListener('dragover', dropZoneDragover)
-  dragDropTarget.addEventListener('dragleave', dropZoneDragleave)
-
-  // super basic hack for checking checkboxes, just for demo
-  ;[].slice.call($('.gfield_checkbox label')).map(function (el) {
-    el.addEventListener('click', function () {
-      el.classList.toggle('checkbox-checked')
-    })
-  })
-
-  // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
-  $('#select-audio')[0].onclick = function () { $('#audio-file-input')[0].click()}
-  $('#select-visual')[0].onclick = function () { $('#visual-file-input')[0].click()}
-  $('[type=file]')[0].addEventListener('change', function () {
-    $('#select-audio')[0].value = 'Thanks!'
-    var jsmediatags = window.jsmediatags
-    var file = $('[type=file]')[0].files[0]
-    console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
-    _a = document.createElement('audio')
-    _a.src = URL.createObjectURL(file)
-    _a.addEventListener('loadedmetadata', function () {
-      console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
-      // not implemented yet, make sure to add duration to the hidden field x-amz-meta-track-duration
-      console.dir(_a)
-      console.log('... and we can also get the ID3 metadata!')
-      jsmediatags.read(file, {
-        onSuccess: function (tag) {
-          console.log(tag.tags)
-          if (tag.tags.artist) {
-            $('[name=artist]')[0].value = tag.tags.artist
-          }
-          if (tag.tags.title) {
-            $('[name=track-name]')[0].value = tag.tags.title
-          }
-          if (tag.tags.album) {
-            $('[name=album]')[0].value = tag.tags.album
-          }
-          if (tag.tags.picture) {
-            var base64String = ''
-            for (var i = 0; i < tag.tags.picture.data.length; i++) {
-              base64String += String.fromCharCode(tag.tags.picture.data[i])
-            }
-            var base64 = 'data:' + tag.tags.picture.format + ';base64,' + window.btoa(base64String)
-            $('#image-preview')[0].src = base64
-
-            // attempting to convert
-	    // TODO: https://davidwalsh.name/convert-canvas-image, then save as blob
-            // TODO: if image is set from mp3, upon visual form ajax submission remove last file field and instead formData.append('file', blob, 'filename')
-            var extractedImageBlob = b64toBlob(window.btoa(base64String), tag.tags.picture.format)
-            console.log(extractedImageBlob)
-          }
-        },
-        onError: function (error) {
-          console.log(error)
+            var byteArray = new Uint8Array(byteNumbers)
+            byteArrays.push(byteArray)
         }
-      })
-    })
-  })
-  $('.upload-button')[0].addEventListener('click', function (e) {
-    // shake for now if not valid
-    if (!validateForm()) {
-      e.target.classList.add('shake')
-      setTimeout(function () {
-        e.target.classList.remove('shake')
-      }, 3000)
+        var blob = new Blob(byteArrays, { type: contentType })
+        return blob
     }
-  })
+
+    function uploadProgressHandler (e) {
+        if (e.lengthComputable) {
+            var max = e.total
+            var current = e.loaded
+            var percentage = Math.floor((current * 100) / max)
+            console.log('upload: %c' + percentage + '% complete', 'color: yellow')
+            if (percentage >= 100) {
+                // process completed
+            }
+        }
+    }
+
+    function validateForm () {
+        nameInputsValid()
+        termsAndCondValid()
+        /**
+         * Validation placeholder:
+         * -- input fields cannot be empty / must be strings
+         * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
+         * -- all terms & conditions checkboxes must be in a checked state
+         * -- hidden fields in both signed forms must be populated and equal the values of the inputs
+         * -- if not valid, add a red border to the missing places, and perhaps an explanation box
+         */
+        if (!window.overrideForm) {
+            return false
+        } else {
+            console.log('%call form fields are filled out & valid.', 'color: #00FF00')
+            console.log('%cattempting audio form submission...', 'font-weight: bold')
+            jQuery.ajax({
+                type: 'POST',
+                xhr: function () {
+                    var myXhr = jQuery.ajaxSettings.xhr()
+                    if (myXhr.upload) {
+                        myXhr.upload.addEventListener('progress', uploadProgressHandler, false)
+                    }
+                    return myXhr
+                },
+                url: $('#audio-form')[0].getAttribute('action'),
+                data: new FormData($('#audio-form')[0]),
+                crossDomain: true,
+                processData: false,
+                dataType: 'xml',
+                cache: false,
+                contentType: false,
+                success: function (data) {
+                    console.log('audio form submission %cok', 'background: #222; color: #bada55')
+                    console.log(data)
+                },
+                error: function (err) {
+                    console.log(err)
+                }
+            }).then(function () {
+                console.log('%cattempting visual form submission...', 'font-weight: bold')
+                jQuery.ajax({
+                    type: 'POST',
+                    url: $('#visual-form')[0].getAttribute('action'),
+                    data: new FormData($('#visual-form')[0]),
+                    crossDomain: true,
+                    processData: false,
+                    dataType: 'xml',
+                    cache: false,
+                    contentType: false,
+                    success: function (data) {
+                        console.log('visual form submission %cok', 'background: #222; color: #bada55')
+                        console.log(data)
+                    },
+                    error: function (err) {
+                        console.log(err)
+                    }
+                })
+            }).then(function () {
+                $('.upload-button')[0].innerHTML = 'Success!'
+            })
+        }
+    }
+
+    function nameInputsValid () {
+        var trackName = $('#track-name')[0]
+        var artistName = $('#artist-name')[0]
+        var albumName = $('#album-name')[0]
+        var returnValue = true
+        console.log('trackName', trackName.value)
+        console.log('artistName', artistName.value)
+        console.log('albumName', albumName.value)
+
+        if (!trackName.value) {
+            $('.track-name-error')[0].innerText = 'Please enter a title for the track'
+            if (trackName.className.indexOf('error') === -1) {
+                trackName.classList.add('error')
+            }
+            returnValue = false
+        } else {
+            trackName.className = ''
+            $('.track-name-error')[0].innerText = ''
+        }
+        if (!artistName.value) {
+            $('.artist-name-error')[0].innerText = 'Please enter the artist name'
+            if (artistName.className.indexOf('error') === -1) {
+                artistName.classList.add('error')
+            }
+            returnValue = false
+        } else {
+            artistName.className = ''
+            $('.artist-name-error')[0].innerText = ''
+        }
+        if (!albumName.value) {
+            $('.album-name-error')[0].innerText = 'Please enter the name of the album'
+            if (albumName.className.indexOf('error') === -1) {
+                albumName.classList.add('error')
+            }
+            returnValue = false
+        } else {
+            albumName.className = ''
+            $('.album-name-error')[0].innerText = ''
+        }
+        return returnValue
+    }
+
+    function termsAndCondValid () {
+        var chkbxs = $('.gfield_checkbox')
+        var returnValue = true
+        chkbxs.forEach(function (bx) {
+            var box = bx.getElementsByTagName('label')[0]
+            if (box.className.indexOf('checkbox-checked') === -1) {
+                $('#terms-error-message')[0].innerText = 'Please check the following boxes. Thank you'
+                returnValue = false
+            } else {
+                $('#terms-error-message')[0].innerText = ''
+            }
+            console.log(bx.getElementsByTagName('label')[0])
+        })
+        return returnValue
+    }
+
+    dragDropTarget.addEventListener('drop', drop)
+    dragDropTarget.addEventListener('dragover', dropZoneDragover)
+    dragDropTarget.addEventListener('dragleave', dropZoneDragleave)
+
+    // super basic hack for checking checkboxes, just for demo
+    ;[].slice.call($('.gfield_checkbox label')).map(function (el) {
+        el.addEventListener('click', function () {
+            el.classList.toggle('checkbox-checked')
+        })
+    })
+
+    // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
+    $('#select-audio')[0].onclick = function () {
+        $('#audio-file-input')[0].click()
+    }
+    $('#select-visual')[0].onclick = function () {
+        $('#visual-file-input')[0].click()
+    }
+    $('[type=file]')[0].addEventListener('change', function () {
+        $('#select-audio')[0].value = 'Thanks!'
+        var jsmediatags = window.jsmediatags
+        var file = $('[type=file]')[0].files[0]
+        console.log('we listened to a change in the selected file, now we will create an <audio> element, wait and try to squeeze some info out of it...')
+        _a = document.createElement('audio')
+        _a.src = URL.createObjectURL(file)
+        _a.addEventListener('loadedmetadata', function () {
+            console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
+            // not implemented yet, make sure to add duration to the hidden field x-amz-meta-track-duration
+            console.dir(_a)
+            console.log('... and we can also get the ID3 metadata!')
+            jsmediatags.read(file, {
+                onSuccess: function (tag) {
+                    console.log(tag.tags)
+                    if (tag.tags.artist) {
+                        $('[name=artist]')[0].value = tag.tags.artist
+                    }
+                    if (tag.tags.title) {
+                        $('[name=track-name]')[0].value = tag.tags.title
+                    }
+                    if (tag.tags.album) {
+                        $('[name=album]')[0].value = tag.tags.album
+                    }
+                    if (tag.tags.picture) {
+                        var base64String = ''
+                        for (var i = 0; i < tag.tags.picture.data.length; i++) {
+                            base64String += String.fromCharCode(tag.tags.picture.data[i])
+                        }
+                        var base64 = 'data:' + tag.tags.picture.format + ';base64,' + window.btoa(base64String)
+                        $('#image-preview')[0].src = base64
+
+                        // attempting to convert
+                        // TODO: https://davidwalsh.name/convert-canvas-image, then save as blob
+                        // TODO: if image is set from mp3, upon visual form ajax submission remove last file field and instead formData.append('file', blob, 'filename')
+                        var extractedImageBlob = b64toBlob(window.btoa(base64String), tag.tags.picture.format)
+                        console.log(extractedImageBlob)
+                    }
+                },
+                onError: function (error) {
+                    console.log(error)
+                }
+            })
+        })
+    })
+    $('.upload-button')[0].addEventListener('click', function (e) {
+        // shake for now if not valid
+        if (!validateForm()) {
+            e.target.classList.add('shake')
+            setTimeout(function () {
+                e.target.classList.remove('shake')
+            }, 3000)
+        }
+    })
 })
+
 
 </script>
 <?php get_footer(); ?>
