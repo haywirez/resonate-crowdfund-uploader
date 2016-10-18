@@ -11,15 +11,15 @@ get_currentuserinfo();
 $current_user = wp_get_current_user();
 $uuid4 = Uuid::uuid4();
 $awsUuid = $uuid4->toString();
-$audioUploader = new Signature(
+$audioForm = new Signature(
         getenv('AWS_ACCESS_KEY_ID'),
         getenv('AWS_SECRET_ACCESS_KEY'),
-            getenv('AWS_S3_BUCKET_NAME'),
+        getenv('AWS_S3_BUCKET_NAME'),
         getenv('AWS_S3_REGION'),
         [
         'max_file_size' => 20,
         'expires' => '+10 minutes',
-        'content_type' => 'audio/mpeg3',
+        'content_type' => 'audio/mpeg',
         'default_filename' => 'test/track/audio/' . $awsUuid . '.mp3',
         'additional_inputs' => [
             'x-amz-meta-artist' => '',
@@ -31,10 +31,10 @@ $audioUploader = new Signature(
         ],
         ]
     );
-$visualUploader = new Signature(
+$visualForm = new Signature(
         getenv('AWS_ACCESS_KEY_ID'),
         getenv('AWS_SECRET_ACCESS_KEY'),
-            getenv('AWS_S3_BUCKET_NAME'),
+        getenv('AWS_S3_BUCKET_NAME'),
         getenv('AWS_S3_REGION'),
         [
         'max_file_size' => 2,
@@ -49,16 +49,16 @@ $visualUploader = new Signature(
 ?>
 <link rel='stylesheet' href='https://resonate.is/wp-content/plugins/gravityforms/css/formsmain.min.css' type='text/css' media='all' />
 <!-- The two real forms that will have to be submitted in sequence, probably best to manipulate by IDs  -->
-<form action="<?php echo $audioUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
-    <?php echo $audioUploader->getFormInputsAsHtml(); ?>
-    <input type="file" name="audio-file" accept="audio/mpeg3" style="opacity: 0;
+<form action="<?php echo $audioForm->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="audio-form">
+    <?php echo $audioForm->getFormInputsAsHtml(); ?>
+    <input type="file" name="file" id="audio-file-input" accept="audio/mpeg" style="opacity: 0;
             position: absolute;
             top: 0px;
             left: 0px;">
 </form>
-<form action="<?php echo $visualUploader->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
-    <?php echo $visualUploader->getFormInputsAsHtml(); ?>
-    <input type="file" name="visual-file" accept="image/jpeg" style="opacity: 0;
+<form action="<?php echo $visualForm->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
+    <?php echo $visualForm->getFormInputsAsHtml(); ?>
+    <input type="file" name="file" id="visual-file-input" accept="image/jpeg" style="opacity: 0;
             position: absolute;
             top: 0px;
             left: 0px;">
@@ -78,10 +78,11 @@ $visualUploader = new Signature(
                 <input type="text" name="artist" value="" id="artist-name">
         <!-- here we will probably have to have two upload areas, maybe left/right split? one for the audio, one for the visual (cover art) -->
         <div class="row">
-            <div class="small-12 large-4 columns" role="visual-upload-area">
+            <div class="small-12 large-2 columns" role="visual-upload-area">
                 <img src="" class="hidden" id="image-preview">
+                <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files" style="z-index: 1;">
             </div>
-            <div class="small-12 large-8 columns" role="audio-upload-area">
+            <div class="small-12 large-10 columns" role="audio-upload-area">
                 <div class="gform_fileupload_multifile">
                     <div class="gform_drop_area" style="position: relative;">
                         <span class="gform_drop_instructions">Drop files here or </span>
@@ -252,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     ev.stopPropagation()
     console.log(ev.dataTransfer.files)
     // add dropped file to input field
-    $('[name=audio-file]')[0].files = ev.dataTransfer.files
+    $('#audio-file-input')[0].files = ev.dataTransfer.files
     $('.gform_drop_instructions')[1].innerText = ev.dataTransfer.files[0].name
     dragDropTarget.classList.remove('dragover')
   }
@@ -280,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
   function validateForm () {
     nameInputsValid()
     termsAndCondValid()    
-/**
+    /**
     * Validation placeholder:
     * -- input fields cannot be empty / must be strings
     * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
@@ -288,7 +289,43 @@ document.addEventListener('DOMContentLoaded', function (event) {
     * -- hidden fields in both signed forms must be populated and equal the values of the inputs
     * -- if not valid, add a red border to the missing places, and perhaps an explanation box
     */
-    return false
+    if (!window.overrideForm) {
+      return false
+    } else {
+      jQuery.ajax({
+            type: 'POST',
+            url: $('#audio-form')[0].getAttribute('action'),
+            data: new FormData($('#audio-form')[0]),
+            crossDomain: true,
+            processData: false,
+            dataType: 'xml',
+            cache: false,
+            contentType: false,
+            success: function (data) {
+                console.log('audio form submission %cok%c','background: #222; color: #bada55', data)
+            },
+            error: function (err) {
+                console.log(err)
+            }
+        }).then(function () {
+	   jQuery.ajax({
+            type: 'POST',
+            url: $('#visual-form')[0].getAttribute('action'),
+            data: new FormData($('#visual-form')[0]),
+            crossDomain: true,
+            processData: false,
+            dataType: 'xml',
+            cache: false,
+            contentType: false,
+            success: function (data) {
+                console.log('visual form submission %cok%c','background: #222; color: #bada55', data)
+            },
+            error: function (err) {
+                console.log(err)
+            }	
+	  })
+        })
+    }
   }
   function  nameInputsValid() {
     var trackName = $('#track-name')[0]
@@ -301,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     if(!trackName.value) {
       $('.track-name-error')[0].innerText = "Please enter a title for the track"
-      if(trackName.className.indexOf('error') === -1) { trackName.className += 'error'; }
+      if(trackName.className.indexOf('error') === -1) { trackName.classList.add('error') }
       returnValue = false
     } else { 
       trackName.className = ""
@@ -309,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     }
     if(!artistName.value) {
       $('.artist-name-error')[0].innerText = 'Please enter the artist name'
-      if(artistName.className.indexOf('error') === -1) { artistName.className += 'error'; }
+      if(artistName.className.indexOf('error') === -1) { artistName.classList.add('error') }
       returnValue = false
     } else {
       artistName.className = ""
@@ -317,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
     }
     if(!albumName.value) {
       $('.album-name-error')[0].innerText = 'Please enter the name of the album'
-      if(albumName.className.indexOf('error') === -1) { albumName.className += 'error'; }
+      if(albumName.className.indexOf('error') === -1) { albumName.classList.add('error') }
       returnValue = false
     } else {
       albumName.className = ""
@@ -331,9 +368,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
     var returnValue = true
     chkbxs.forEach(function(bx){
       var box = bx.getElementsByTagName('label')[0]
-      if(!box.className.indexOf('checkbox-checked') > -1) {
-        $('#terms-error-message')[0].innerText = "Please check the following boxes. However if all these terms are not valid, please do not upload this music to our serveice. Thank you";
-        reutrnValue = false;
+      if(box.className.indexOf('checkbox-checked') === -1) {
+        $('#terms-error-message')[0].innerText = "Please check the following boxes. Thank you";
+        returnValue = false;
       } else {
         $('#terms-error-message')[0].innerText = "";
       }
