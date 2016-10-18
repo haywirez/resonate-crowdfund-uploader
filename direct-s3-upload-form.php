@@ -333,9 +333,12 @@ document.addEventListener('DOMContentLoaded', function (event) {
                 error: function (err) {
                     console.log(err)
                 }
-            }).then(function () {
+            }).then(function (res, type, prevObject) {
+		if (prevObject.status !== 201 || window.throwTest) {
+                  throw new Error('Audio submission didn\'t succeed, aborting :(')
+                }
                 console.log('%cattempting visual form submission...', 'font-weight: bold')
-                jQuery.ajax({
+                return jQuery.ajax({
                     type: 'POST',
                     url: $('#visual-form')[0].getAttribute('action'),
                     data: new FormData($('#visual-form')[0]),
@@ -352,8 +355,13 @@ document.addEventListener('DOMContentLoaded', function (event) {
                         console.log(err)
                     }
                 })
-            }).then(function () {
+            }).then(function (res, statusType, prevObject) {
+                if (prevObject.status !== 201 || window.throwTest2) {
+                  throw new Error('Artwork submission didn\'t succeed, aborting :(')
+                }
                 $('.upload-button')[0].innerHTML = 'Success!'
+            }).catch(function (err) {
+                console.error(err)
             })
         }
     }
@@ -489,7 +497,6 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
     })
 })
-
 
 </script>
 <?php get_footer(); ?>
