@@ -292,6 +292,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
     if (!window.overrideForm) {
       return false
     } else {
+      console.log('%call form fields are filled out & valid.', 'color: #00FF00')
+      console.log('%cattempting audio form submission...', 'font-weight: bold')
       jQuery.ajax({
             type: 'POST',
             url: $('#audio-form')[0].getAttribute('action'),
@@ -302,13 +304,15 @@ document.addEventListener('DOMContentLoaded', function (event) {
             cache: false,
             contentType: false,
             success: function (data) {
-                console.log('audio form submission %cok%c','background: #222; color: #bada55', data)
+                console.log('audio form submission %cok','background: #222; color: #bada55')
+                console.log(data)
             },
             error: function (err) {
                 console.log(err)
             }
-        }).then(function () {
-	   jQuery.ajax({
+        }).then(function () {   
+          console.log('%cattempting visual form submission...', 'font-weight: bold')
+          jQuery.ajax({
             type: 'POST',
             url: $('#visual-form')[0].getAttribute('action'),
             data: new FormData($('#visual-form')[0]),
@@ -318,13 +322,15 @@ document.addEventListener('DOMContentLoaded', function (event) {
             cache: false,
             contentType: false,
             success: function (data) {
-                console.log('visual form submission %cok%c','background: #222; color: #bada55', data)
+                console.log('visual form submission %cok','background: #222; color: #bada55')
+		console.log(data)
             },
             error: function (err) {
                 console.log(err)
             }	
 	  })
         })
+       return true
     }
   }
   function  nameInputsValid() {
@@ -392,7 +398,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
   })
 
   // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
-  $('#select-audio')[0].onclick = function () {$('[type=file]')[0].click()}
+  $('#select-audio')[0].onclick = function () { $('#audio-file-input')[0].click()}
+  $('#select-visual')[0].onclick = function () { $('#visual-file-input')[0].click()}
   $('[type=file]')[0].addEventListener('change', function () {
     $('#select-audio')[0].value = 'Thanks!'
     var jsmediatags = window.jsmediatags
@@ -425,9 +432,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
             var base64 = 'data:' + tag.tags.picture.format + ';base64,' + window.btoa(base64String)
             $('#image-preview')[0].src = base64
 
-            // attempting to set image for the given file input
-            $('[name=visual-file]')[0].files[0] = new File([b64toBlob(window.btoa(base64String), tag.tags.picture.format)], 'extracted-image.jpg')
-            console.log($('[name=visual-file]')[0].files)
+            // attempting to convert
+	    // TODO: https://davidwalsh.name/convert-canvas-image, then save as blob
+            // TODO: if image is set from mp3, upon visual form ajax submission remove last file field and instead formData.append('file', blob, 'filename')
+            var extractedImageBlob = b64toBlob(window.btoa(base64String), tag.tags.picture.format)
+            console.log(extractedImageBlob)
           }
         },
         onError: function (error) {
