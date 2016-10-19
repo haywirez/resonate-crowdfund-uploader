@@ -65,7 +65,7 @@ $visualForm = new Signature(
         left: 0px;">
 </form>
 <div class="row">
-  <p class="small-12 large-12 columns">Start by adding your mp3 here. We'll attempt to extract all the metadata associated with this file for you!</p>
+  <p id="header-info" class="small-12 large-12 columns">Start by adding your mp3 here. We'll attempt to extract all the metadata associated with this file for you!</p>
 </div>
 <form id="fake-form">
 <div class="row" id="first-step">
@@ -82,12 +82,10 @@ $visualForm = new Signature(
 <div class="row hidden" id="second-step">
 <div class="small-12 large-4 columns gform_wrapper" role="visual-upload-area">
     <div class="gform_fileupload_multifile" id="image-preview">
-        <div class="gform_drop_area" id="image-drop-area" style="position: relative;">
-            <input id="select-visual" type="button" value="Select Image" class="button gform_button_select_files" style="z-index: 1;">
-        </div>
+        <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
     </div>
-    <!-- <img src="" class="" id="image-preview">
-    <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files" style="z-index: 1;"> -->
+    <!-- <img src="" class="" id="image-preview" -->
+    <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files" style="z-index: 1;">
 </div>
 <div class="small-12 large-8 columns gform_wrapper" role="main">
         <label for="track-name">Track Name</label>
@@ -114,7 +112,7 @@ $visualForm = new Signature(
                 </li>
             </ul>
         </div>
-        <div class="upload-button button disabled">Upload</div>
+        <div class="upload-button button">Upload</div>
 </div>
 </div>
 </form>
@@ -140,7 +138,8 @@ opacity: 0;
   height: 300px;
 }
 #select-visual{
-  margin-top: 120px;
+  margin-top: 20px;
+  width: 100%;
 }
 
 @-webkit-keyframes shake {
@@ -370,6 +369,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
             ev.dataTransfer.files[ 0 ].size < 20971520 // 20 MB
         ) {
             $('#visual-file-input')[ 0 ].files = ev.dataTransfer.files
+            var reader = new FileReader()
+            reader.onload = function (e) {
+              visualFileSelected(e.target.result)
+            }
+            reader.readAsDataURL(ev.dataTransfer.files[0])
             // $('.gform_drop_instructions')[ 0 ].innerText = ' '
             // $('.gform_drop_instructions')[ 1 ].innerText = ev.dataTransfer.files[ 0 ].name
         } else {
@@ -377,12 +381,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
             console.log('error: you can only drop 1 file, and it must be an mp3 less than 20 mb in size')
         }
         // do something with the image dropped
-        visualFileSelected()
-        dragdropTargetVisual.classlist.remove('dragover')
+        // dragDropTargetVisual.classlist.remove('dragover')
     }
 
     function dropZoneDragleaveVisual (ev) {
-        dragdroptargetvisual.classlist.remove('dragover')
+        dragDropTargetVisual.classlist.remove('dragover')
     }
 
     dragDropTargetVisual.addEventListener('drop', dropVisual)
@@ -391,12 +394,20 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
 
     $('[type=file]')[ 1 ].addEventListener('change', function () {
-        visualFileSelected()
+        var file = $('[type=file]')[ 1 ].files[ 0 ]
+        var reader = new FileReader()
+        reader.onload = function (e) {
+          visualFileSelected(e.target.result)
+        }
+        reader.readAsDataURL(file)
     })
 
 
-    function visualFileSelected() {
-      console.log('IMAGE CHANGEDDDD')
+    function visualFileSelected(file) {
+      $('#select-visual')[0].value = "Change Image"
+      var img = new Image()
+      img.src = file
+      $('#image-preview')[ 0 ].style.backgroundImage = "url('" + img.src + "')"
     }
 
 
@@ -498,15 +509,16 @@ document.addEventListener('DOMContentLoaded', function (event) {
     }
 
     function validateForm () {
-        /**
-         * Validation placeholder:
-         * -- input fields cannot be empty / must be strings
-         * -- both file inputs (audio/visual) must be filled with a valid .mp3, .jpeg file
-         * -- all terms & conditions checkboxes must be in a checked state
-         * -- hidden fields in both signed forms must be populated and equal the values of the inputs
-         * -- if not valid, add a red border to the missing places, and perhaps an explanation box
-         */
-        return (nameInputsValid() && termsAndCondValid())
+      var inputsValid = nameInputsValid()
+      var tsAndCsValid = termsAndCondValid()
+      var audioAndVisualExist = checkForAudioAndVisualFiles
+      return (inputsValid && tsAndCsValid && audioAndVisualExist)
+    }
+
+    function checkForAudioAndVisualFiles () {
+      var audio = $('#audio-file-input')[0].files.length > 0
+      var visual = $('#visual-file-input')[0].files.length > 0
+      return (audio && visual)
     }
 
     function nameInputsValid () {
@@ -559,7 +571,6 @@ document.addEventListener('DOMContentLoaded', function (event) {
             } else {
                 $('#terms-error-message')[ 0 ].innerText = ''
             }
-            console.log(bx.getElementsByTagName('label')[ 0 ])
         })
         return returnValue
     }
@@ -594,7 +605,8 @@ document.addEventListener('DOMContentLoaded', function (event) {
     function changePreviewImage(base64String) {
       var img = new Image()
       img.src = base64String
-      $('#image-preview')[ 0 ].style.backgroundImage = "url('" + img.src + "')"
+      $('#image-preview')[0].style.backgroundImage = "url('" + img.src + "')"
+      $('#select-visual')[0].value = "Change Image"
     }
 
     // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
@@ -631,6 +643,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         }
 
         if (okFlag) {
+            $('#header-info')[0].classList.add('hidden')
             console.log('we listened to a change in the selected file, which was valid.\nnow we will create an audio element, wait and try to squeeze some info out of it...')
             _a = document.createElement('audio')
             _a.src = URL.createObjectURL(file)
