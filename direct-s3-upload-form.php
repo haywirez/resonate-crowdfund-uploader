@@ -64,6 +64,9 @@ $visualForm = new Signature(
         top: 0px;
         left: 0px;">
 </form>
+<div class="row">
+  <p class="small-12 large-12 columns">Start up adding your mp3 here. We'll attempt to extract all the metadata associated with this file for you!</p>
+</div>
 <form id="fake-form">
 <div class="row" id="first-step">
     <div class="small-12 large-12 columns gform_wrapper" role="audio-upload-area">
@@ -117,8 +120,11 @@ background: rgba(84, 235, 128, 0.3);
 .checkbox-checked:before {
 background: #54E866;
 }
+#second-step{
+transition: opacity 750ms;
+}
 .hidden {
-visibility: hidden;
+opacity: 0;
 }
 
 @-webkit-keyframes shake {
@@ -250,6 +256,25 @@ document.addEventListener('DOMContentLoaded', function (event) {
         ev.stopPropagation()
     }
 
+    // Returns a function, that, as long as it continues to be invoked, will not
+    // be triggered. The function will be called after it stops being called for
+    // N milliseconds. If `immediate` is passed, trigger the function on the
+    // leading edge, instead of the trailing.
+    function debounce(func, wait, immediate) {
+        var timeout
+        return function() {
+            var context = this, args = arguments
+            var later = function() {
+                timeout = null
+                if (!immediate) func.apply(context, args)
+            };
+            var callNow = immediate && !timeout
+            clearTimeout(timeout)
+            timeout = setTimeout(later, wait)
+            if (callNow) func.apply(context, args)
+        }
+    }
+
     function drop (ev) {
         ev.preventDefault()
         ev.stopPropagation()
@@ -258,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         // TODO: also allow only one file to be dropped!
         // TODO: also do the same for manual selection!
         if (ev.dataTransfer.files.length === 1 &&
-            ev.dataTransfer.files[ 0 ].type === 'audio/mp3' &&
+            (ev.dataTransfer.files[ 0 ].type === 'audio/mpeg' || ev.dataTransfer.files[0].type === 'audio/mp3') &&
             ev.dataTransfer.files[ 0 ].size < 20971520 // 20 MB
         ) {
             $('#audio-file-input')[ 0 ].files = ev.dataTransfer.files
@@ -292,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
         return new Blob(byteArrays, { type: contentType })
     }
 
-    function uploadProgressHandler (e) {
+    var uploadProgressHandler = debounce(function (e) {
         if (e.lengthComputable) {
             var max = e.total
             var current = e.loaded
@@ -302,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                 // upload process completed
             }
         }
-    }
+    }, 50, true)
 
     function copyFormFields () {
         // placeholder for copying fake form fields to real one
@@ -473,19 +498,19 @@ document.addEventListener('DOMContentLoaded', function (event) {
     var trackName = $('#track-name')[ 0 ]
     trackName.addEventListener('blur', function () {
         $('[name=x-amz-meta-track-name]')[ 0 ].value = trackName.value
-        validateForm()
+        // validateForm()
     })
 
     var artistName = $('#artist-name')[ 0 ]
     artistName.addEventListener('blur', function () {
         $('[name=x-amz-meta-artist]')[ 0 ].value = artistName.value
-        validateForm()
+        // validateForm()
     })
 
     var albumName = $('#album-name')[ 0 ]
     albumName.addEventListener('blur', function () {
         $('[name=x-amz-meta-album]')[ 0 ].value = albumName.value
-        validateForm()
+        // validateForm()
     })
 
     // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
@@ -504,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
         // check type, length etc...
         if ($('[type=file]')[ 0 ].files.length === 1 &&
-            file.type === 'audio/mp3' &&
+            (file.type === 'audio/mpeg' || file.type === 'audio/mp3') &&
             file.size < 20971520 // 20 MB
         ) {
             okFlag = true
@@ -556,15 +581,20 @@ document.addEventListener('DOMContentLoaded', function (event) {
                             // TODO: if image is set from mp3, upon visual form ajax submission remove last file field and instead formData.append('file', blob, 'filename')
                             var extractedImageBlob = b64toBlob(window.btoa(base64String), tag.tags.picture.format)
                             console.log(extractedImageBlob)
+                        } else if (tag.tags.APIC) {
+                            console.log('NO PICTURE FOUND FROM jsmediatags - use APIC', tag.tags.APIC[0])
+                            var base64String = ''
+                            for (var i = 0; i < tag.tags.APIC[0].data.data.length; i++) {
+                                base64String += String.fromCharCode(tag.tags.APIC[0].data.data[ i ])
+                            }
+                            var base64 = 'data:JPG;base64,' + window.btoa(base64String)
+                            $('#image-preview')[ 0 ].src = base64
+
                         }
 
                         // show other input fields
                         $('#second-step')[ 0 ].classList.remove('hidden')
 
-                        // do something
-                        window.setTimeout(function () {
-                            validateForm()
-                        }, 500)
                     },
                     onError: function (error) {
                         // also show other input fields?
