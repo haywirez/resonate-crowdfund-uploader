@@ -65,7 +65,7 @@ $visualForm = new Signature(
         left: 0px;">
 </form>
 <div class="row">
-  <p class="small-12 large-12 columns">Start up adding your mp3 here. We'll attempt to extract all the metadata associated with this file for you!</p>
+  <p class="small-12 large-12 columns">Start by adding your mp3 here. We'll attempt to extract all the metadata associated with this file for you!</p>
 </div>
 <form id="fake-form">
 <div class="row" id="first-step">
@@ -81,8 +81,13 @@ $visualForm = new Signature(
 </div>
 <div class="row hidden" id="second-step">
 <div class="small-12 large-4 columns gform_wrapper" role="visual-upload-area">
-    <img src="" class="" id="image-preview">
-    <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files" style="z-index: 1;">
+    <div class="gform_fileupload_multifile" id="image-preview">
+        <div class="gform_drop_area" id="image-drop-area" style="position: relative;">
+            <input id="select-visual" type="button" value="Select Image" class="button gform_button_select_files" style="z-index: 1;">
+        </div>
+    </div>
+    <!-- <img src="" class="" id="image-preview">
+    <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files" style="z-index: 1;"> -->
 </div>
 <div class="small-12 large-8 columns gform_wrapper" role="main">
         <label for="track-name">Track Name</label>
@@ -125,6 +130,17 @@ transition: opacity 750ms;
 }
 .hidden {
 opacity: 0;
+}
+#image-preview{
+  background-size: cover;
+  width: 300px;
+  height: 300px;
+}
+#image-drop-area{
+  height: 300px;
+}
+#select-visual{
+  margin-top: 120px;
 }
 
 @-webkit-keyframes shake {
@@ -513,6 +529,12 @@ document.addEventListener('DOMContentLoaded', function (event) {
         // validateForm()
     })
 
+    function changePreviewImage(base64String) {
+      var img = new Image()
+      img.src = base64String
+      $('#image-preview')[ 0 ].style.backgroundImage = "url('" + img.src + "')"
+    }
+
     // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
     $('#select-audio')[ 0 ].onclick = function () {
         $('#audio-file-input')[ 0 ].click()
@@ -523,6 +545,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     $('[type=file]')[ 0 ].addEventListener('change', function () {
         // some kind of a visual feedback in the area
+        console.log('change event')
         var jsmediatags = window.jsmediatags
         var file = $('[type=file]')[ 0 ].files[ 0 ]
         var okFlag = false
@@ -535,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
             okFlag = true
             $('.gform_drop_instructions')[ 0 ].innerText = ' '
             $('.gform_drop_instructions')[ 1 ].innerText = file.name
-            $('#select-audio')[ 0 ].value = 'Thanks!'
+            $('#select-audio')[ 0 ].value = 'Change Audio'
         } else {
             $('#select-audio')[ 0 ].value = 'Select again'
             $('.gform_drop_instructions')[ 1 ].innerText = 'you can only select 1 mp3 file smaller than 20 MB...'
@@ -574,7 +597,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                                 base64String += String.fromCharCode(tag.tags.picture.data[ i ])
                             }
                             var base64 = 'data:' + tag.tags.picture.format + ';base64,' + window.btoa(base64String)
-                            $('#image-preview')[ 0 ].src = base64
+                            changePreviewImage(base64)
 
                             // attempting to convert
                             // TODO: https://davidwalsh.name/convert-canvas-image, then save as blob
@@ -588,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
                                 base64String += String.fromCharCode(tag.tags.APIC[0].data.data[ i ])
                             }
                             var base64 = 'data:JPG;base64,' + window.btoa(base64String)
-                            $('#image-preview')[ 0 ].src = base64
+                            changePreviewImage(base64)
 
                         }
 
