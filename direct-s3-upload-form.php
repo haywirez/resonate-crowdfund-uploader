@@ -265,6 +265,10 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     // drag & drop section
     var dragDropTarget = $('.gform_fileupload_multifile')[ 0 ]
+    dragDropTarget.addEventListener('drop', drop)
+    dragDropTarget.addEventListener('dragover', dropZoneDragover)
+    dragDropTarget.addEventListener('dragleave', dropZoneDragleave)
+
 
     function dropZoneDragover (ev) {
         dragDropTarget.classList.add('dragover')
@@ -309,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
             $('.gform_drop_instructions')[ 1 ].innerText = 'you can only drop 1 mp3 file smaller than 20 MB...'
             console.log('error: you can only drop 1 file, and it must be an mp3 less than 20 MB in size')
         }
+        audioFileSelected()
         dragDropTarget.classList.remove('dragover')
     }
 
@@ -344,6 +349,67 @@ document.addEventListener('DOMContentLoaded', function (event) {
             }
         }
     }, 50, true)
+
+
+    // drag and drop image section
+    var dragDropTargetVisual = $('.gform_fileupload_multifile')[1]
+
+    function dropZoneDragoverVisual (ev) {
+        dragDropTargetVisual.classList.add('dragover')
+        ev.preventDefault()
+        ev.stopPropagation()
+    }
+
+    function dropVisual (ev) {
+        ev.preventDefault()
+        ev.stopPropagation()
+        console.log('dropped file: ', ev.dataTransfer.files, ev.dataTransfer.files[ 0 ].type)
+        // TODO: make sure only 300x300 (default attached artwork size)?
+        if (ev.dataTransfer.files.length === 1 &&
+            ev.dataTransfer.files[ 0 ].type === 'image/jpeg' &&
+            ev.dataTransfer.files[ 0 ].size < 20971520 // 20 MB
+        ) {
+            $('#visual-file-input')[ 0 ].files = ev.dataTransfer.files
+            // $('.gform_drop_instructions')[ 0 ].innerText = ' '
+            // $('.gform_drop_instructions')[ 1 ].innerText = ev.dataTransfer.files[ 0 ].name
+        } else {
+            // $('.gform_drop_instructions')[ 1 ].innerText = 'you can only drop 1 mp3 file smaller than 20 MB...'
+            console.log('error: you can only drop 1 file, and it must be an mp3 less than 20 mb in size')
+        }
+        // do something with the image dropped
+        visualFileSelected()
+        dragdropTargetVisual.classlist.remove('dragover')
+    }
+
+    function dropZoneDragleaveVisual (ev) {
+        dragdroptargetvisual.classlist.remove('dragover')
+    }
+
+    dragDropTargetVisual.addEventListener('drop', dropVisual)
+    dragDropTargetVisual.addEventListener('dragover', dropZoneDragoverVisual)
+    dragDropTargetVisual.addEventListener('dragleave', dropZoneDragleaveVisual)
+
+
+    $('[type=file]')[ 1 ].addEventListener('change', function () {
+        visualFileSelected()
+    })
+
+
+    function visualFileSelected() {
+      console.log('IMAGE CHANGEDDDD')
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     function copyFormFields () {
         // placeholder for copying fake form fields to real one
@@ -498,10 +564,6 @@ document.addEventListener('DOMContentLoaded', function (event) {
         return returnValue
     }
 
-    dragDropTarget.addEventListener('drop', drop)
-    dragDropTarget.addEventListener('dragover', dropZoneDragover)
-    dragDropTarget.addEventListener('dragleave', dropZoneDragleave)
-
     // super basic hack for checking checkboxes, just for demo
     ;
     [].slice.call($('.gfield_checkbox label')).map(function (el) {
@@ -545,7 +607,10 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
     $('[type=file]')[ 0 ].addEventListener('change', function () {
         // some kind of a visual feedback in the area
-        console.log('change event')
+        audioFileSelected()
+    })
+
+    function audioFileSelected () {
         var jsmediatags = window.jsmediatags
         var file = $('[type=file]')[ 0 ].files[ 0 ]
         var okFlag = false
@@ -627,7 +692,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
                 })
             })
         }
-    })
+    }
+
+
     $('.upload-button')[ 0 ].addEventListener('click', function (e) {
         // shake for now if not valid
         if (!submitForm()) {
