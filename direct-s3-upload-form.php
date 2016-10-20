@@ -566,6 +566,14 @@ $visualForm = new Signature(
         function checkForAudioAndVisualFiles () {
             var audio = $('#audio-file-input')[ 0 ].files.length > 0
             var visual = !!imageBlobToUpload
+            if (!audio) {
+                console.log('audio is missing???')
+            }
+            if (!visual) {
+                console.log('image is missing')
+                // TODO:
+                // $('.track-name-error')[ 0 ].innerText = 'Please choose an image'
+            }
             return (audio && visual)
         }
 
@@ -611,7 +619,7 @@ $visualForm = new Signature(
         function termsAndCondValid () {
             var chkbxs = $('.gfield_checkbox')
             var returnValue = true
-            chkbxs.forEach(function (bx) {
+            ;[].slice.call(chkbxs).map(function (bx) {
                 var box = bx.getElementsByTagName('label')[ 0 ]
                 if (box.className.indexOf('checkbox-checked') === -1) {
                     $('#terms-error-message')[ 0 ].innerText = 'Please check the following boxes. Thank you'
