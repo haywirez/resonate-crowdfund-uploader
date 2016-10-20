@@ -83,7 +83,7 @@ $visualForm = new Signature(
         </div>
     </div>
     <div class="row hidden" id="second-step">
-        <div class="small-4 small-offset-4 large-4 columns gform_wrapper" role="visual-upload-area">
+        <div class="small-4 small-offset-4 large-4 large-offset-0 columns gform_wrapper" role="visual-upload-area">
             <div class="gform_fileupload_multifile" id="image-preview">
                 <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
             </div>
@@ -121,7 +121,10 @@ $visualForm = new Signature(
                 </li>
             </ul>
         </div>
-        <div class="upload-button button">Upload</div>
+            <div class="upload-button button">Upload</div>
+        </div>
+        <div class="small-12 large-12 column" role="progress">
+            <div class="upload-progress-bar hidden">&nbsp;</div>
         </div>
     </div>
 </form>
@@ -159,6 +162,12 @@ $visualForm = new Signature(
 
     .upload-button {
         margin-top: 20px;
+    }
+
+    .upload-progress-bar {
+       background: #54EB80;
+       width: 0%;
+       height: 3px;
     }
 
     @-webkit-keyframes shake {
@@ -217,67 +226,9 @@ $visualForm = new Signature(
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"
         integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
 <script type="text/javascript">
-    /**
-     * ======
-     * BASICS:
-     * ======
-     *
-     * What the php code is doing is creating a signed form that the AWS S3 endpoint will accept upon POSTing.
-     * It contains a JSON policy that is signed server side by the API key - the policy contains information
-     * about filesize limits, destination, allowed form fields and values. This way we don't have to send anything through our server,
-     * it goes directly into storage. More info about this on the following links:
-     *
-     * http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-authentication-HTTPPOST.html
-     * https://github.com/eddturtle/direct-upload
-     * https://www.designedbyaturtle.co.uk/2015/direct-upload-to-s3-using-aws-signature-v4-php/
-     *
-     * =====
-     * TODO:
-     * =====
-     *
-     * We will actually need to create 2 signed forms + a fake form used for the inputs.
-     * - for the audio file
-     * - for the cover art image
-     *
-     * These two forms have to be submitted via AJAX, because we want to stay on the page to do some additional processing.
-     * The php code contains a generated UUID, this server as the common identifier for the files for now:
-     * (9204391e-3b58-4d3e-8a1d-b81a976a1fb9.mp3 -> 9204391e-3b58-4d3e-8a1d-b81a976a1fb9.jpg)
-     *
-     * Pseudocode for the JavaScript:
-     *  Make drag & drop work (<input type="file"> has to be populated with the path upon dropping), see resources
-     *  select file onClick -> trigger <input name="audio-file" onClick>
-     *  Upload button onClick event  -> validate form
-     *                                  -> if not valid, show error messages
-     *                                  -> if valid, fill x-amz-meta-track-name etc. hidden fields (VERY IMPORTANT)
-     *                                       -> send both forms via an ajax POST request, in sequence (mp3, visual)
-     *                                          -> if successful (returns statusCode 201, created), drop the UUID into a localStorage field.
-     submitted: {
-                                                audio: $uuid
-                                                visual: $uuid
-                                            }
-     *                                          -> show a visual indicator of success on the frontend UI (checkmark appers, flashing)
-     *                                          -> BONUS: send another post to a php endpoint that will save the metadata
-     *                                             (track name, uuid, etc) into a custom WP post type for the logged in user. this will come handy
-     *                                             later if someone wants to delete their track, or replace it with a different version
-     *
-     *  BONUS:
-     *  - preview cover art after selecting image file
-     *  - extract metadata, images duration from audio file after selecting
-     *
-     *  Test the form AJAX in all major browsers
-     *  Work on CSS (currently uses some stolen classes from WP GravityForms)
-     *
-     * =========
-     * RESOURCES
-     * =========
-     * Drag & drop
-     * https://css-tricks.com/drag-and-drop-file-uploading/
-     * Extract duration from audio file:
-     * https://jsfiddle.net/derickbailey/s4P2v/
-     *
-     * Hit me up on the resonate slack @attila for questions, I'll try to help
-     */
     document.addEventListener('DOMContentLoaded', function (event) {
+        var previouslyUploaded = localStorage.getItem('uploadedTrack')
+        if (previouslyUploaded) { console.log('%cyou already uploaded something before...', 'font-weight:bold; color: magenta') }
         console.log("...it's alive!!!")
 
         // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
@@ -296,7 +247,7 @@ $visualForm = new Signature(
             ev.preventDefault()
             ev.stopPropagation()
         }
-
+        /* TODO: use this to validate after all document clicks + keyUp handlers, but debounce with 2 seconds */ 
         // Returns a function, that, as long as it continues to be invoked, will not
         // be triggered. The function will be called after it stops being called for
         // N milliseconds. If `immediate` is passed, trigger the function on the
@@ -409,17 +360,22 @@ $visualForm = new Signature(
             return new Blob(byteArrays, { type: contentType })
         }
 
-        var uploadProgressHandler = debounce(function (e) {
+        var uploadProgressHandler = function (e) {
             if (e.lengthComputable) {
+                $('.upload-button')[ 0 ].innerHTML = 'Uploading...'
+                var progressBar = $('.upload-progress-bar')[0] 
                 var max = e.total
                 var current = e.loaded
                 var percentage = Math.floor((current * 100) / max)
+                progressBar.classList.remove('hidden')
+                progressBar.style.width = percentage + '%'
                 console.log('upload: %c' + percentage + '% complete', 'color: yellow')
                 if (percentage >= 100) {
                     // upload process completed
+                    progressBar.classList.add('hidden')
                 }
             }
-        }, 100, true)
+        }
 
         // drag and drop image section
         var dragDropTargetVisual = $('.gform_fileupload_multifile')[ 1 ]
@@ -494,7 +450,7 @@ $visualForm = new Signature(
         function submitForm () {
             var validForm = validateForm()
             var fieldsCopied = copyFormFields()
-	    var audioLocation, visualLocation
+	        var audioLocation, visualLocation
             // TODO: rework this, messy...
 
             if (validForm && fieldsCopied) {
@@ -520,7 +476,7 @@ $visualForm = new Signature(
                         console.log('audio form submission %cok', 'background: #222; color: #bada55')
                         console.log(data)
                         window.audioResponse = data
-			audioLocation = parseLocationFromResponse(data)
+			            audioLocation = parseLocationFromResponse(data)
                     },
                     error: function (err) {
                         console.log(err)
@@ -545,14 +501,14 @@ $visualForm = new Signature(
                         success: function (data) {
                             console.log('visual form submission %cok', 'background: #222; color: #bada55')
                             console.log(data)
-			    visualLocation = parseLocationFromResponse(data)
-			    localStorage.setItem('uploadedTrack', JSON.stringify({
-			      "name": $('#track-name')[ 0 ].value,
-			      "album": $('#album-name')[ 0 ].value,
-			      "artist": $('#artist-name')[ 0 ].value,
-			      "audioLocation": audioLocation,
-			      "visualLocation": visualLocation
-			    }))
+                            visualLocation = parseLocationFromResponse(data)
+                            localStorage.setItem('uploadedTrack', JSON.stringify({
+                            "name": $('#track-name')[ 0 ].value,
+                            "album": $('#album-name')[ 0 ].value,
+                            "artist": $('#artist-name')[ 0 ].value,
+                            "audioLocation": audioLocation,
+                            "visualLocation": visualLocation
+                            }))
                         },
                         error: function (err) {
                             console.log(err)
@@ -563,10 +519,10 @@ $visualForm = new Signature(
                         throw new Error("Artwork submission didn't succeed, aborting :( ")
                     }
                     $('.upload-button')[ 0 ].innerHTML = 'Success!'
-                    return true
                 }).catch(function (err) {
                     console.error(err)
                 })
+                return true
             } else {
                 return false
             }
@@ -648,6 +604,8 @@ $visualForm = new Signature(
             })
             if(!returnValue) {
               $('#terms-error-message')[ 0 ].innerText = 'Please check the following boxes. Thank you'
+            } else {
+              $('#terms-error-message')[ 0 ].innerText = ''
             }
             return returnValue
         }
