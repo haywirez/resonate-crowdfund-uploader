@@ -88,9 +88,10 @@ $visualForm = new Signature(
             <div class="gform_fileupload_multifile" id="image-preview">
                 <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
             </div>
-            <div class="error-message" id="image-error"></div>
-            <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files"
-                   style="z-index: 1;">
+            <div id="select-visual-container">
+                <div class="error-message" id="image-error"></div>
+                <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files" style="z-index: 1;">
+            </div>
         </div>
         <div class="small-12 large-8 columns gform_wrapper" role="main">
             <label for="track-name">Track Name</label>
@@ -138,8 +139,12 @@ $visualForm = new Signature(
         background: #54E866;
     }
 
+    #first-step {
+        height: 200px;
+    }
+
     #second-step {
-        transition: opacity 750ms;
+        transition: opacity 750ms ease-in-out;
     }
 
     .hidden {
@@ -159,6 +164,19 @@ $visualForm = new Signature(
     #select-visual {
         margin-top: 20px;
         width: 240px;
+    }
+
+    #select-visual-container, #first-step, .ginput_container_checkbox {
+        transition: height 750ms ease-in-out;
+        overflow-y:hidden;
+    }
+
+    #select-visual-container {
+        height: 75px;
+    }
+
+    .ginput_container_checkbox {
+        height: 100px;
     }
 
     .upload-button {
@@ -242,7 +260,7 @@ $visualForm = new Signature(
             ev.preventDefault()
             ev.stopPropagation()
         }
-        /* TODO: use this to validate after all document clicks + keyUp handlers, but debounce with 2 seconds */ 
+        /* TODO: use this to validate after all document clicks + keyUp handlers, but debounce with 2 seconds */
         // Returns a function, that, as long as it continues to be invoked, will not
         // be triggered. The function will be called after it stops being called for
         // N milliseconds. If `immediate` is passed, trigger the function on the
@@ -358,7 +376,7 @@ $visualForm = new Signature(
         var uploadProgressHandler = function (e) {
             if (e.lengthComputable) {
                 var uploadButton = $('.upload-button')[ 0 ]
-                var progressBar = $('.upload-progress-bar')[0] 
+                var progressBar = $('.upload-progress-bar')[0]
                 var max = e.total
                 var current = e.loaded
                 var percentage = Math.floor((current * 100) / max)
@@ -443,6 +461,21 @@ $visualForm = new Signature(
             return true
         }
 
+        function toggleUploadState () {
+          var firstStep = jQuery('#first-step')
+          console.log('toggle', firstStep);
+          if(jQuery('#first-step').css('height') === '200px') {
+            jQuery.scrollTo(0,750)
+            jQuery('#first-step').css('height', 0)
+            jQuery('#select-visual-container').css('height', 0)
+            jQuery('.ginput_container_checkbox').css('height', 0)
+          } else {
+            jQuery('#first-step').css('height', 200)
+            jQuery('#select-visual-container').css('height', 75)
+            jQuery('.ginput_container_checkbox').css('height', 100)
+          }
+        }
+
         function submitForm () {
             var validForm = validateForm()
             var fieldsCopied = copyFormFields()
@@ -452,6 +485,7 @@ $visualForm = new Signature(
             if (validForm && fieldsCopied) {
                 console.log('%call form fields are filled out & valid.', 'color: #00FF00')
                 console.log('%cattempting audio form submission...', 'font-weight: bold')
+                toggleUploadState()
                 $('.upload-button')[ 0 ].removeEventListener('click', submitClick)
                 jQuery.ajax({
                     type: 'POST',
@@ -477,6 +511,7 @@ $visualForm = new Signature(
                     },
                     error: function (err) {
                         console.log(err)
+                        toggleUploadState()
                     }
                 }).then(function (res, type, prevObject) {
                     if (prevObject.status !== 201 || window.throwTest) {
@@ -509,6 +544,7 @@ $visualForm = new Signature(
                         },
                         error: function (err) {
                             console.log(err)
+                            toggleUploadState()
                         }
                     })
                 }).then(function (res, statusType, prevObject) {
@@ -517,7 +553,8 @@ $visualForm = new Signature(
                     }
                     $('.upload-button')[ 0 ].innerHTML = 'All Files Uploaded'
                 }).catch(function (err) {
-                    console.error(err)
+                  console.error(err)
+                  toggleUploadState()
                 })
                 return true
             } else {
