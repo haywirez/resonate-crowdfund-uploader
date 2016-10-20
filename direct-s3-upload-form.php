@@ -26,7 +26,7 @@ $audioForm = new Signature(
             'x-amz-meta-track-name' => '',
             'x-amz-meta-album' => '',
             'x-amz-meta-track-duration' => '',
-            'x-amz-meta-visual-key' => $awsUuid,
+            'x-amz-meta-visual-key' => 'track/visual/' . $awsUuid . '.png',
             'x-amz-meta-owner-id' => $current_user->ID
         ],
     ]
@@ -341,11 +341,11 @@ $visualForm = new Signature(
         }
 
         function convertImageWithPica (img) {
-            // force to 300x300
+            // force to 600x600
             console.log('---- %cconverting image to 300x300 (pica)', 'color: #FF00FF')
             var canvas = document.createElement('canvas')
-            canvas.height = 300
-            canvas.width = 300
+            canvas.height = 600
+            canvas.width = 600
             window.pica.resizeCanvas(img, canvas, { alpha: true }, function (err) {
                 if (err) { console.log('pica conversion error: ', err) }
                 var finalImg = convertCanvasToImage(canvas)
