@@ -87,7 +87,7 @@ $visualForm = new Signature(
             <div class="gform_fileupload_multifile" id="image-preview">
                 <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
             </div>
-            <!-- <img src="" class="" id="image-preview" -->
+            <div class="error-message" id="image-error"></div>
             <input id="select-visual" type="button" value="Select image" class="button gform_button_select_files"
                    style="z-index: 1;">
         </div>
@@ -113,7 +113,7 @@ $visualForm = new Signature(
                 </li>
                 <li class="gfield_checkbox">
                     <label for="x-amz-meta-streaming-agreement">Resonate may stream these songs for free during the
-                        crowd campaign</label>
+                        crowd campaign.</label>
                 </li>
                 <li class="gfield_checkbox">
                     <label for="x-amz-meta-song-title-information">All song titles, artist names and artwork are
@@ -577,8 +577,7 @@ $visualForm = new Signature(
             }
             if (!visual) {
                 console.log('image is missing')
-                // TODO:
-                // $('.track-name-error')[ 0 ].innerText = 'Please choose an image'
+                $('#image-error')[ 0 ].innerText = 'Please choose an image'
             }
             return (audio && visual)
         }
@@ -688,7 +687,7 @@ $visualForm = new Signature(
             }
 
             if (okFlag) {
-                $('.header-container')[ 0 ].remove()
+                if ($('.header-container').length > 0) { $('.header-container')[ 0 ].remove() }
                 _a = document.createElement('audio')
                 _a.src = URL.createObjectURL(file)
                 _a.addEventListener('loadedmetadata', function () {
