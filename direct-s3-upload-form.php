@@ -22,6 +22,7 @@ $audioForm = new Signature(
         'content_type' => 'audio/mpeg',
         'default_filename' => 'track/audio/' . $awsUuid . '.mp3',
         'additional_inputs' => [
+            'acl' => 'private',
             'x-amz-meta-artist' => '',
             'x-amz-meta-track-name' => '',
             'x-amz-meta-album' => '',
@@ -83,7 +84,7 @@ $visualForm = new Signature(
         </div>
     </div>
     <div class="row hidden" id="second-step">
-        <div class="small-4 small-offset-4 large-4 large-offset-0 columns gform_wrapper" role="visual-upload-area">
+        <div class="small-8 small-offset-2 medium-4 medium-offset-4 large-4 large-offset-0 columns gform_wrapper" role="visual-upload-area">
             <div class="gform_fileupload_multifile" id="image-preview">
                 <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
             </div>
@@ -162,6 +163,7 @@ $visualForm = new Signature(
 
     .upload-button {
         margin-top: 20px;
+        transition: all 1s ease;
     }
 
     .upload-progress-bar {
@@ -204,13 +206,6 @@ $visualForm = new Signature(
         }
     }
 
-    .shake {
-        -webkit-animation-name: shake;
-        animation-name: shake;
-        -webkit-animation-duration: 1s;
-        animation-duration: 1s;
-    }
-
     .error-message {
         color: red;
         font-size: 12px;
@@ -228,7 +223,7 @@ $visualForm = new Signature(
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function (event) {
         var previouslyUploaded = localStorage.getItem('uploadedTrack')
-        if (previouslyUploaded) { console.log('%cyou already uploaded something before...', 'font-weight:bold; color: magenta') }
+        if (previouslyUploaded) { console.log('%cyou already uploaded something before...', 'font-weight:bold; color: magenta', previouslyUploaded) }
         console.log("...it's alive!!!")
 
         // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
@@ -362,13 +357,14 @@ $visualForm = new Signature(
 
         var uploadProgressHandler = function (e) {
             if (e.lengthComputable) {
-                $('.upload-button')[ 0 ].innerHTML = 'Uploading...'
+                var uploadButton = $('.upload-button')[ 0 ]
                 var progressBar = $('.upload-progress-bar')[0] 
                 var max = e.total
                 var current = e.loaded
                 var percentage = Math.floor((current * 100) / max)
                 progressBar.classList.remove('hidden')
                 progressBar.style.width = percentage + '%'
+                uploadButton.innerHTML = 'Uploading...'
                 console.log('upload: %c' + percentage + '% complete', 'color: yellow')
                 if (percentage >= 100) {
                     // upload process completed
