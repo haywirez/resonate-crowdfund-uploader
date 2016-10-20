@@ -494,7 +494,7 @@ $visualForm = new Signature(
         function submitForm () {
             var validForm = validateForm()
             var fieldsCopied = copyFormFields()
-
+	    var audioLocation, visualLocation
             // TODO: rework this, messy...
 
             if (validForm && fieldsCopied) {
@@ -519,6 +519,8 @@ $visualForm = new Signature(
                     success: function (data) {
                         console.log('audio form submission %cok', 'background: #222; color: #bada55')
                         console.log(data)
+                        window.audioResponse = data
+			audioLocation = parseLocationFromResponse(data)
                     },
                     error: function (err) {
                         console.log(err)
@@ -543,6 +545,14 @@ $visualForm = new Signature(
                         success: function (data) {
                             console.log('visual form submission %cok', 'background: #222; color: #bada55')
                             console.log(data)
+			    visualLocation = parseLocationFromResponse(data)
+			    localStorage.setItem('uploadedTrack', JSON.stringify({
+			      "name": $('#track-name')[ 0 ].value,
+			      "album": $('#album-name')[ 0 ].value,
+			      "artist": $('#artist-name')[ 0 ].value,
+			      "audioLocation": audioLocation,
+			      "visualLocation": visualLocation
+			    }))
                         },
                         error: function (err) {
                             console.log(err)
@@ -561,6 +571,12 @@ $visualForm = new Signature(
                 return false
             }
         }
+
+        function parseLocationFromResponse (result) {
+	  var response = result.documentElement
+          var loc = response.getElementsByTagName('Location')[0]
+	  return loc.innerHTML
+	}
 
         function validateForm () {
             var inputsValid = nameInputsValid()
@@ -627,12 +643,12 @@ $visualForm = new Signature(
             ;[].slice.call(chkbxs).map(function (bx) {
                 var box = bx.getElementsByTagName('label')[ 0 ]
                 if (box.className.indexOf('checkbox-checked') === -1) {
-                    $('#terms-error-message')[ 0 ].innerText = 'Please check the following boxes. Thank you'
                     returnValue = false
-                } else {
-                    $('#terms-error-message')[ 0 ].innerText = ''
                 }
             })
+            if(!returnValue) {
+              $('#terms-error-message')[ 0 ].innerText = 'Please check the following boxes. Thank you'
+            }
             return returnValue
         }
 
