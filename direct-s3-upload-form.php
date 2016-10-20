@@ -452,6 +452,7 @@ $visualForm = new Signature(
             if (validForm && fieldsCopied) {
                 console.log('%call form fields are filled out & valid.', 'color: #00FF00')
                 console.log('%cattempting audio form submission...', 'font-weight: bold')
+                $('.upload-button')[ 0 ].removeEventListener('click', submitClick)
                 jQuery.ajax({
                     type: 'POST',
                     xhr: function () {
@@ -514,7 +515,7 @@ $visualForm = new Signature(
                     if (prevObject.status !== 201 || window.throwTest2) {
                         throw new Error("Artwork submission didn't succeed, aborting :( ")
                     }
-                    $('.upload-button')[ 0 ].innerHTML = 'Success!'
+                    $('.upload-button')[ 0 ].innerHTML = 'All Files Uploaded'
                 }).catch(function (err) {
                     console.error(err)
                 })
@@ -715,8 +716,7 @@ $visualForm = new Signature(
                 })
             }
         }
-
-        $('.upload-button')[ 0 ].addEventListener('click', function (e) {
+        function submitClick(e) {
             // shake for now if not valid
             if (!submitForm()) {
                 e.target.classList.add('shake')
@@ -724,7 +724,8 @@ $visualForm = new Signature(
                     e.target.classList.remove('shake')
                 }, 3000)
             }
-        })
+        }
+        $('.upload-button')[ 0 ].addEventListener('click', submitClick)
     })
 
 </script>
