@@ -83,7 +83,7 @@ $visualForm = new Signature(
         </div>
     </div>
     <div class="row hidden" id="second-step">
-        <div class="small-12 large-4 columns gform_wrapper" role="visual-upload-area">
+        <div class="small-4 small-offset-4 large-4 columns gform_wrapper" role="visual-upload-area">
             <div class="gform_fileupload_multifile" id="image-preview">
                 <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
             </div>
