@@ -314,7 +314,7 @@ $visualForm = new Signature(
         var imageBlobToUpload
 
         function updateFinalImageBlob (img) {
-            imageBlobToUpload = dataURItoBlob(img.src)
+            imageBlobToUpload = dataUriToBlob(img.src)
         }
 
         function getFinalImageBlob () {
@@ -342,7 +342,7 @@ $visualForm = new Signature(
 
         function convertImageWithPica (img) {
             // force to 600x600
-            console.log('---- %cconverting image to 300x300 (pica)', 'color: #FF00FF')
+            console.log('---- %cconverting image to 600x600 (pica)', 'color: #FF00FF')
             var canvas = document.createElement('canvas')
             canvas.height = 600
             canvas.width = 600
@@ -354,13 +354,13 @@ $visualForm = new Signature(
             })
         }
 
-        function dataURItoBlob (dataURI) {
-            var binary = atob(dataURI.split(',')[ 1 ])
+        function dataUriToBlob (dataUri) {
+            var binary = atob(dataUri.split(',')[ 1 ])
             var array = []
             for (var i = 0; i < binary.length; i++) {
                 array.push(binary.charCodeAt(i))
             }
-            return new Blob([ new Uint8Array(array) ], { type: 'image/jpeg' })
+            return new Blob([ new Uint8Array(array) ], { type: 'image/png' })
         }
 
         function drop (ev) {
@@ -648,7 +648,7 @@ $visualForm = new Signature(
             $('#select-visual')[ 0 ].value = "Change Image"
         }
 
-        // hacky demonstration, this is how you trigger the selection of an audio file + get the duration
+        // trigger file inputs
         $('#select-audio')[ 0 ].onclick = function () {
             $('#audio-file-input')[ 0 ].click()
         }
@@ -676,25 +676,22 @@ $visualForm = new Signature(
                 $('.gform_drop_instructions')[ 1 ].innerText = file.name
                 $('#select-audio')[ 0 ].value = 'Change Audio'
             } else {
-                $('#select-audio')[ 0 ].value = 'Select again'
+                $('#select-audio')[ 0 ].value = 'Select Again'
                 $('.gform_drop_instructions')[ 1 ].innerText = 'you can only select 1 mp3 file smaller than 20 MB...'
                 console.log('error: selected file is not mp3 or less than 20 MB in size')
             }
 
             if (okFlag) {
                 $('#header-info')[ 0 ].classList.add('hidden')
-                console.log('we listened to a change in the selected file, which was valid.\nnow we will create an audio element, wait and try to squeeze some info out of it...')
                 _a = document.createElement('audio')
                 _a.src = URL.createObjectURL(file)
                 _a.addEventListener('loadedmetadata', function () {
-                    console.log('...and now we can get the duration:', _a.duration / 60, 'minutes, audio element:')
-                    var songDurationSeconds = (Math.floor(_a.duration % 60) < 10 ? '0' : '') + Math.floor(_a.duration % 60)
-                    var songDurationMinutes = Math.floor(_a.duration / 60)
-                    $('[name=x-amz-meta-track-duration]')[ 0 ].value = songDurationMinutes + ':' + songDurationSeconds
+                    console.log('audio file info, duration:', _a.duration, 'seconds, audio element:')
                     console.dir(_a)
-                    console.log('... and we can also get the ID3 metadata!')
+                    $('[name=x-amz-meta-track-duration]')[ 0 ].value = _a.duration
                     jsmediatags.read(file, {
                         onSuccess: function (tag) {
+                            console.log('successfully read audio file metadata:')
                             console.log(tag.tags)
                             if (tag.tags.artist) {
                                 $('[name=artist]')[ 0 ].value = tag.tags.artist
