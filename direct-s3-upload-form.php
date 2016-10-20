@@ -65,7 +65,7 @@ $visualForm = new Signature(
         top: 0px;
         left: 0px;">
 </form>
-<div class="row">
+<div class="row header-container">
     <p id="header-info" class="small-12 large-12 columns">Start by adding your mp3 here. We'll attempt to extract all
         the metadata associated with this file for you!</p>
 </div>
@@ -101,25 +101,27 @@ $visualForm = new Signature(
             <label for="artist">Artist Name</label>
             <div class="error-message artist-name-error"></div>
             <input type="text" name="artist" value="" id="artist-name">
-            <!-- checkboxes are "fake", but they need to react upon click, and need to be checked. CSS is stolen from WP gravity forms -->
-            <div class="error-message" id="terms-error-message"></div>
-            <div class="ginput_container ginput_container_checkbox">
-                <ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
-                    <li class="gfield_checkbox">
-                        <label for="x-amz-meta-no-covers">These songs are 100% written by me or my band. NO
-                            COVERS.</label>
-                    </li>
-                    <li class="gfield_checkbox">
-                        <label for="x-amz-meta-streaming-agreement">Resonate may stream these songs for free during the
-                            crowd campaign</label>
-                    </li>
-                    <li class="gfield_checkbox">
-                        <label for="x-amz-meta-song-title-information">All song titles, artist names and artwork are
-                            included in these files.</label>
-                    </li>
-                </ul>
-            </div>
-            <div class="upload-button button">Upload</div>
+        </div>
+        <div class="small-12 large-12 columns gform_wrapper" role="submission">
+        <!-- checkboxes are "fake", but they need to react upon click, and need to be checked. CSS is stolen from WP gravity forms -->
+        <div class="error-message" id="terms-error-message"></div>
+        <div class="ginput_container ginput_container_checkbox">
+            <ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
+                <li class="gfield_checkbox">
+                    <label for="x-amz-meta-no-covers">These songs are 100% written by me or my band. NO
+                        COVERS.</label>
+                </li>
+                <li class="gfield_checkbox">
+                    <label for="x-amz-meta-streaming-agreement">Resonate may stream these songs for free during the
+                        crowd campaign</label>
+                </li>
+                <li class="gfield_checkbox">
+                    <label for="x-amz-meta-song-title-information">All song titles, artist names and artwork are
+                        included in these files.</label>
+                </li>
+            </ul>
+        </div>
+        <div class="upload-button button">Upload</div>
         </div>
     </div>
 </form>
@@ -142,17 +144,21 @@ $visualForm = new Signature(
 
     #image-preview {
         background-size: cover;
-        width: 300px;
-        height: 300px;
+        width: 240px;
+        height: 240px;
     }
 
     #image-drop-area {
-        height: 300px;
+        height: 240px;
     }
 
     #select-visual {
         margin-top: 20px;
-        width: 100%;
+        width: 240px;
+    }
+
+    .upload-button {
+        margin-top: 20px;
     }
 
     @-webkit-keyframes shake {
@@ -682,7 +688,7 @@ $visualForm = new Signature(
             }
 
             if (okFlag) {
-                $('#header-info')[ 0 ].classList.add('hidden')
+                $('.header-container')[ 0 ].remove()
                 _a = document.createElement('audio')
                 _a.src = URL.createObjectURL(file)
                 _a.addEventListener('loadedmetadata', function () {
