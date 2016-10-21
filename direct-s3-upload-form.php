@@ -119,7 +119,15 @@ $visualForm = new Signature(
                 </li>
            </ul>
         </div>
-            <div class="upload-button button">Upload</div>
+            <div class="success-message-container">
+                <h3 class="success-message">All Files Uploaded Successfully</h3>
+            </div>
+            <div class="upload-button-container">
+                <div class="upload-button button">Upload</div>
+            </div>
+            <div class="reload-page-button-container">
+                <div class="button" onClick="location.reload()">Upload Another Track</div>
+            </div>
         </div>
         <div class="small-12 large-12 column" role="progress">
             <div class="upload-progress-bar hidden">&nbsp;</div>
@@ -162,7 +170,7 @@ $visualForm = new Signature(
         width: 240px;
     }
 
-    #select-visual-container, #first-step, .ginput_container_checkbox {
+    #select-visual-container, #first-step, .ginput_container_checkbox, .reload-page-button-container, .upload-button-container, .success-message-container {
         transition: height 750ms ease-in-out;
         overflow-y:hidden;
     }
@@ -175,9 +183,26 @@ $visualForm = new Signature(
         height: 100px;
     }
 
+    .upload-button-container {
+        height: 75px;
+    }
+
     .upload-button {
         margin-top: 20px;
         transition: all 1s ease;
+    }
+
+    .success-message-container {
+        height: 0;
+    }
+
+    .success-message {
+        transition: opacity 750ms ease-in-out;
+        opacity: 0;
+    }
+
+    .reload-page-button-container {
+        height: 0;
     }
 
     .upload-progress-bar {
@@ -236,7 +261,7 @@ $visualForm = new Signature(
         integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function (event) {
-        var previouslyUploaded = localStorage.getItem('uploadedTrack')
+        var previouslyUploaded = localStorage.getItem('uploadedTracks')
         if (previouslyUploaded) { console.log('%cyou already uploaded something before...', 'font-weight:bold; color: magenta', previouslyUploaded) }
         console.log("...it's alive!!!")
 
@@ -459,7 +484,6 @@ $visualForm = new Signature(
 
         function toggleUploadState () {
           var firstStep = jQuery('#first-step')
-          console.log('toggle', firstStep);
           if(jQuery('#first-step').css('height') === '200px') {
             jQuery.scrollTo(0,750)
             jQuery('#first-step').css('height', 0)
@@ -470,6 +494,27 @@ $visualForm = new Signature(
             jQuery('#select-visual-container').css('height', 75)
             jQuery('.ginput_container_checkbox').css('height', 100)
           }
+        }
+
+        function visualSuccessButtons () {
+            jQuery('.reload-page-button-container').css('height', 75)
+            jQuery('.upload-button-container').css('height', 0)
+            // jQuery('.upload-button').addClass('hidden')
+            jQuery('.success-message-container').css('height', 40)
+            jQuery('.success-message').css('opacity', 1)
+        }
+
+        function addTrackToLocalStorage (track, album, artist, audio, visual) {
+            var newTrackObject = {
+                "name": track,
+                "album": album,
+                "artist": artist,
+                "audioLocation": audio,
+                "visualLocation": visual
+            }
+            var tracks = JSON.parse(localStorage.getItem('uploadedTracks')) ? JSON.parse(localStorage.getItem('uploadedTracks')) : []
+            tracks.push(newTrackObject)
+            localStorage.setItem('uploadedTracks', JSON.stringify(tracks))
         }
 
         function submitForm () {
@@ -532,13 +577,11 @@ $visualForm = new Signature(
                             console.log('visual form submission %cok', 'background: #222; color: #bada55')
                             console.log(data)
                             visualLocation = parseLocationFromResponse(data)
-                            localStorage.setItem('uploadedTrack', JSON.stringify({
-                            "name": $('#track-name')[ 0 ].value,
-                            "album": $('#album-name')[ 0 ].value,
-                            "artist": $('#artist-name')[ 0 ].value,
-                            "audioLocation": audioLocation,
-                            "visualLocation": visualLocation
-                            }))
+                            var name = $('#track-name')[ 0 ].value
+                            var album = $('#album-name')[ 0 ].value
+                            var artist = $('#artist-name')[ 0 ].value
+                            addTrackToLocalStorage(name, album, artist, audioLocation, visualLocation)
+                            visualSuccessButtons()
                         },
                         error: function (err) {
                             console.log(err)
@@ -549,7 +592,7 @@ $visualForm = new Signature(
                     if (prevObject.status !== 201 || window.throwTest2) {
                         throw new Error("Artwork submission didn't succeed, aborting :( ")
                     }
-                    $('.upload-button')[ 0 ].innerHTML = 'All Files Uploaded'
+                    // $('.upload-button')[ 0 ].innerHTML = 'All Files Uploaded'
                 }).catch(function (err) {
                   console.error(err)
                   toggleUploadState()
