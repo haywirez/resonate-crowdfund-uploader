@@ -403,7 +403,7 @@ $visualForm = new Signature(
                 var percentage = Math.floor((current * 100) / max)
                 progressBar.classList.remove('hidden')
                 progressBar.style.width = percentage + '%'
-                uploadButton.innerHTML = 'Uploading...'
+                uploadButton.innerHTML = 'Uploading '+ percentage + '% ...'
                 console.log('upload: %c' + percentage + '% complete', 'color: yellow')
                 if (percentage >= 100) {
                     // upload process completed
