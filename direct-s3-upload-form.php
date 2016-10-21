@@ -18,7 +18,7 @@ $audioForm = new Signature(
     getenv('AWS_S3_REGION'),
     [
         'max_file_size' => 20,
-        'expires' => '+10 minutes',
+        'expires' => '+40 minutes',
         'content_type' => 'audio/mpeg',
         'default_filename' => 'track/audio/' . $awsUuid . '.mp3',
         'additional_inputs' => [
@@ -40,7 +40,7 @@ $visualForm = new Signature(
     [
         'acl' => 'public-read',
         'max_file_size' => 2,
-        'expires' => '+10 minutes',
+        'expires' => '+40 minutes',
         'content_type' => 'image/jpeg',
         'default_filename' => 'track/visual/' . $awsUuid . '.png',
         'additional_inputs' => [
