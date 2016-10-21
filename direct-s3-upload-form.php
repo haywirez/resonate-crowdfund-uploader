@@ -261,9 +261,15 @@ $visualForm = new Signature(
         integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function (event) {
+        console.log('...it\'s alive!!!')
+
+        // force refresh this page before form policy expires
+        setTimeout(function () { 
+          location.reload(true)
+        }, 35 * 60 * 1000)
+        
         var previouslyUploaded = localStorage.getItem('uploadedTracks')
-        if (previouslyUploaded) { console.log('%cyou already uploaded something before...', 'font-weight:bold; color: magenta', previouslyUploaded) }
-        console.log("...it's alive!!!")
+        if (previouslyUploaded) { console.log('%cyou\'ve already uploaded something before...', 'font-weight:bold; color: magenta', previouslyUploaded) }
 
         // not a real jquery, just a wrapper :) jQuery is available though, maybe we should rewrite everything to use it
         var $ = function (x) {
