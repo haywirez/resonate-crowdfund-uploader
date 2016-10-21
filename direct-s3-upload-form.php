@@ -61,7 +61,7 @@ $visualForm = new Signature(
 </form>
 <form action="<?php echo $visualForm->getFormUrl(); ?>" method="post" enctype="multipart/form-data" id="visual-form">
     <?php echo $visualForm->getFormInputsAsHtml(); ?>
-    <input type="file" name="file" id="visual-file-input" accept="image/jpeg" style="opacity: 0;
+    <input type="file" name="safari-fix-file" id="visual-file-input" accept="image/jpeg" style="opacity: 0;
         position: absolute;
         top: 0px;
         left: 0px;">
@@ -117,11 +117,7 @@ $visualForm = new Signature(
                     <label for="x-amz-meta-streaming-agreement">Resonate may stream these songs for free during the
                         crowd campaign.</label>
                 </li>
-                <li class="gfield_checkbox">
-                    <label for="x-amz-meta-song-title-information">All song titles, artist names and artwork are
-                        included in these files.</label>
-                </li>
-            </ul>
+           </ul>
         </div>
             <div class="upload-button button">Upload</div>
         </div>
@@ -518,8 +514,10 @@ $visualForm = new Signature(
                         throw new Error("Audio submission didn't succeed, aborting :( ")
                     }
                     console.log('%cattempting visual form submission...', 'font-weight: bold')
+                    // Safari bugfix hack
+		    $('#visual-file-input')[0].remove()
                     var _formData = new FormData($('#visual-form')[ 0 ])
-                    _formData.delete('file')
+                    //_formData.delete('file')
                     _formData.append('file', getFinalImageBlob())
                     return jQuery.ajax({
                         type: 'POST',
@@ -637,7 +635,7 @@ $visualForm = new Signature(
                 }
             })
             if(!returnValue) {
-              $('#terms-error-message')[ 0 ].innerText = 'Please check the following boxes. Thank you'
+              $('#terms-error-message')[ 0 ].innerText = 'Please check the following boxes. Thank you.'
             } else {
               $('#terms-error-message')[ 0 ].innerText = ''
             }
