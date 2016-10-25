@@ -66,12 +66,15 @@ $visualForm = new Signature(
         top: 0px;
         left: 0px;">
 </form>
-<div class="row header-container">
-    <p id="header-info" class="small-12 large-12 columns">Start by adding your mp3 here. We'll attempt to extract all
+<div class="row header-container blogcolumns">
+	<div class="small-12 large-12 columns">
+	<h1>Songs for the Resonate crowd campaign</h1>
+    <p id="header-info">Start by adding your mp3 here. We'll attempt to extract all
         the metadata associated with this file for you!</p>
+	</div>
 </div>
 <form id="fake-form">
-    <div class="row" id="first-step">
+    <div class="row blogcolumns" id="first-step">
         <div class="small-12 large-12 columns gform_wrapper" role="audio-upload-area">
             <div class="gform_fileupload_multifile">
                 <div class="gform_drop_area" style="position: relative;">
@@ -83,7 +86,7 @@ $visualForm = new Signature(
             </div>
         </div>
     </div>
-    <div class="row hidden" id="second-step">
+    <div class="row hidden blogcolumns" id="second-step">
         <div class="small-8 small-offset-2 medium-4 medium-offset-4 large-4 large-offset-0 columns gform_wrapper" role="visual-upload-area">
             <div class="gform_fileupload_multifile" id="image-preview">
                 <div class="gform_drop_area" id="image-drop-area" style="position: relative;"></div>
@@ -110,17 +113,15 @@ $visualForm = new Signature(
         <div class="ginput_container ginput_container_checkbox">
             <ul class="gfield_checkbox" style="list-style: none; margin-left: 0;">
                 <li class="gfield_checkbox">
-                    <label for="x-amz-meta-no-covers">These songs are 100% written by me or my band. NO
-                        COVERS.</label>
+                    <label for="x-amz-meta-no-covers">These songs are 100% written by me or my band. NO COVERS.</label>
                 </li>
                 <li class="gfield_checkbox">
-                    <label for="x-amz-meta-streaming-agreement">Resonate may stream these songs for free during the
-                        crowd campaign.</label>
+                    <label for="x-amz-meta-streaming-agreement">Resonate may stream these songs for free during the crowd campaign.</label>
                 </li>
            </ul>
         </div>
             <div class="success-message-container">
-                <h3 class="success-message">All Files Uploaded Successfully</h3>
+                <h3 class="success-message">All files uploaded successfully</h3>
             </div>
             <div class="upload-button-container">
                 <div class="upload-button button">Upload</div>
