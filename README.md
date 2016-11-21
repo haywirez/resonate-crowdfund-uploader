@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/resonatecoop/resonate-crowdfund-uploader.png?label=ready&title=Ready)](https://waffle.io/resonatecoop/resonate-crowdfund-uploader)
 # resonate-crowdfund-uploader
 
 Upload form for artists to upload tracks to AWS
